@@ -1,0 +1,146 @@
+<!-- templates/landing_page.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CertEasy | Your Gateway to Certification Success</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+</head>
+<body class="bg-white text-gray-800">
+
+<!-- Navbar -->
+<nav class="flex justify-between items-center p-6 shadow-md">
+    <div class="flex items-center space-x-2">
+        <img src="/static/uploads/logo.png" alt="CertEasy Logo" class="h-10">
+    </div>
+    <div class="space-x-6">
+        <a href="/help/" class="text-gray-600 hover:text-gray-900">Help Center</a>
+        <a href="/login/" class="text-gray-600 hover:text-gray-900">Log In</a>
+        <a href="/signup/" class="bg-orange-500 text-white px-5 py-2 rounded-full font-semibold hover:bg-orange-600">Get Started</a>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="flex flex-col-reverse md:flex-row items-center max-w-7xl mx-auto py-20 px-4" data-aos="fade-up">
+    <div class="md:w-1/2 text-center md:text-left">
+        <h1 class="text-4xl md:text-6xl font-bold mb-4">Master Every Exam with Confidence</h1>
+        <p class="text-lg md:text-2xl mb-8 text-gray-600">All-in-one resources for certifications like CFA, MCAT, LSAT, GRE, and more.</p>
+        <a href="/certifications/" class="bg-orange-500 text-white px-8 py-4 rounded-full text-xl font-bold hover:bg-orange-600">Start Learning Today</a>
+        <p class="mt-4 text-gray-500">Your success starts with CertEasy.</p>
+    </div>
+    <div class="md:w-1/2 mb-10 md:mb-0">
+        <img src="/static/uploads/dashboard.png" alt="Dashboard Preview" class="rounded-xl shadow-lg">
+    </div>
+</section>
+
+<!-- Explore Categories -->
+<section class="bg-gray-50 py-16" data-aos="fade-up">
+    <div class="text-center max-w-4xl mx-auto">
+        <h2 class="text-3xl font-bold mb-10">Browse Certification Paths</h2>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-8 items-center">
+            <a href="/certifications/mcat" class="block transform hover:scale-105 transition-transform">
+                <img src="/static/uploads/mcat.jpg" alt="MCAT" class="h-20 mx-auto">
+            </a>
+            <a href="/certifications/cfa" class="block transform hover:scale-105 transition-transform">
+                <img src="/static/uploads/cfa.png" alt="CFA" class="h-20 mx-auto">
+            </a>
+            <a href="/certifications/gre" class="block transform hover:scale-105 transition-transform">
+                <img src="/static/uploads/gre.webp" alt="GRE" class="h-20 mx-auto">
+            </a>
+            <a href="/certifications/lsat" class="block transform hover:scale-105 transition-transform">
+                <img src="/static/uploads/lsat.png" alt="LSAT" class="h-20 mx-auto">
+            </a>
+            <a href="/certifications/gmat" class="block transform hover:scale-105 transition-transform">
+                <img src="/static/uploads/gmat.jpg" alt="GMAT" class="h-20 mx-auto">
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Options -->
+<section class="py-20 text-center" data-aos="fade-up">
+    <div class="max-w-4xl mx-auto">
+        <div class="space-y-10">
+            <div class="bg-white shadow-lg rounded-lg p-8">
+                <h3 class="text-2xl font-bold mb-2">Unlimited Access Plan</h3>
+                <p class="text-gray-600">Unlock every course, guide, and tool with a simple subscription.</p>
+                <a href="/pricing/" class="mt-4 inline-block bg-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-orange-600">View Pricing</a>
+            </div>
+            <div class="bg-white shadow-lg rounded-lg p-8">
+                <h3 class="text-2xl font-bold mb-2">Certification Bundles</h3>
+                <p class="text-gray-600">Save more by bundling related certification paths.</p>
+                <a href="/bundles/" class="mt-4 inline-block bg-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-orange-600">Explore Bundles</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="bg-gray-100 py-20" data-aos="fade-up">
+    <div class="text-center max-w-6xl mx-auto">
+        <h2 class="text-3xl font-bold mb-10">What Our Students Are Saying</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="p-6 bg-white rounded-lg shadow-md">★★★★★<br>"An amazing resource that helped me ace the CFA Level 1!"</div>
+            <div class="p-6 bg-white rounded-lg shadow-md">★★★★★<br>"Passed my MCAT on the first try thanks to CertEasy!"</div>
+            <div class="p-6 bg-white rounded-lg shadow-md">★★★★★<br>"The GRE prep materials are outstanding!"</div>
+        </div>
+    </div>
+</section>
+
+<!-- Meet Your Mentors -->
+<section class="py-20 text-center" data-aos="fade-up">
+    <h2 class="text-3xl font-bold mb-4">Learn from the Best in the Industry</h2>
+    <div class="flex flex-col items-center mt-10">
+        <img src="/static/uploads/instructor.png" alt="Instructor" class="h-40 w-40 rounded-full shadow-lg">
+        <ul class="mt-6 space-y-2 text-lg">
+            <li>🎓 Certified Experts in Finance, Medicine, Law, and Tech</li>
+            <li>📚 Decades of Real-world Experience</li>
+            <li>🌍 Global Recognition and Credentials</li>
+        </ul>
+    </div>
+</section>
+
+<!-- Cheat Sheets Section -->
+<section class="bg-gray-50 py-20" data-aos="fade-up">
+    <div class="text-center max-w-4xl mx-auto">
+        <h2 class="text-3xl font-bold mb-8">Concise Cheat Sheets for Every Exam</h2>
+        <img src="/static/uploads/cheatsheet.png" alt="CheatSheet Preview" class="mx-auto rounded-lg shadow-lg">
+    </div>
+</section>
+
+<!-- Study Tools Promo -->
+<section class="py-20 text-center" data-aos="fade-up">
+    <h2 class="text-3xl font-bold mb-6">Smart Learning Tools to Boost Your Memory</h2>
+    <p class="text-lg mb-10">⚡ Spaced repetition flashcards to make every concept stick.</p>
+    <img src="/static/uploads/flashcards.png" alt="Flashcards Preview" class="mx-auto rounded-lg shadow-lg">
+</section>
+
+<!-- Q&A Community Promo -->
+<section class="bg-gray-100 py-20" data-aos="fade-up">
+    <div class="text-center max-w-6xl mx-auto">
+        <h2 class="text-3xl font-bold mb-8">Have Questions? We've Got Answers</h2>
+        <img src="/static/uploads/qa.png" alt="Q&A Preview" class="mx-auto rounded-lg shadow-lg">
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-gray-800 text-white py-8 text-center">
+    <div class="space-x-6 mb-4">
+        <a href="/about/" class="hover:underline">About Us</a>
+        <a href="/articles/" class="hover:underline">Articles</a>
+        <a href="/faq/" class="hover:underline">FAQ</a>
+        <a href="/contact/" class="hover:underline">Contact</a>
+        <a href="/privacy/" class="hover:underline">Privacy Policy</a>
+    </div>
+    <p class="text-gray-400">&copy; 2025 CertEasy. All rights reserved.</p>
+</footer>
+
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script>
+    AOS.init();
+</script>
+
+</body>
+</html>

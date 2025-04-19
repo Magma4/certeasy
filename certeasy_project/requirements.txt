@@ -1,0 +1,6 @@
+Django>=4.2
+djangorestframework
+dj-rest-auth
+django-allauth
+stripe
+Pillow
