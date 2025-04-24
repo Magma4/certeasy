@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'accounts',
     'certifications',
     'resources',
+    'flashcards',
+    'quizzes',
 ]
 
 MIDDLEWARE = [

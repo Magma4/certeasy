@@ -11,27 +11,28 @@
 <body class="bg-white text-gray-800">
 
 <!-- Navbar -->
-<nav class="flex justify-between items-center p-6 shadow-md">
+<nav class="sticky top-0 z-50 bg-white flex justify-between items-center p-6 shadow-md">
     <div class="flex items-center space-x-2">
         <img src="/static/uploads/logo.png" alt="CertEasy Logo" class="h-10">
     </div>
-    <div class="space-x-6">
-        <a href="/help/" class="text-gray-600 hover:text-gray-900">Help Center</a>
-        <a href="/login/" class="text-gray-600 hover:text-gray-900">Log In</a>
-        <a href="/signup/" class="bg-orange-500 text-white px-5 py-2 rounded-full font-semibold hover:bg-orange-600">Get Started</a>
+    <div class="flex items-center space-x-4">
+        <a href="/help/" class="px-4 py-2 rounded-full font-semibold text-gray-700 hover:bg-gray-200 transition">Help Center</a>
+        <a href="/login/" class=" text-white px-4 py-2 rounded-full font-semibold hover:bg-green-800 hover:shadow-md transition" style="background-color: #22836e;">Log In</a>
+        <a href="/signup/" class="text-black px-5 py-2 rounded-full font-semibold hover:bg-pink-600 hover:shadow-md transition" style="background-color: #f55571;">Get Started</a>
     </div>
 </nav>
 
 <!-- Hero Section -->
-<section class="flex flex-col-reverse md:flex-row items-center max-w-7xl mx-auto py-20 px-4" data-aos="fade-up">
-    <div class="md:w-1/2 text-center md:text-left">
+<section class="flex flex-col-reverse md:flex-row items-center max-w-7xl mx-auto pt-8 px-4" data-aos="fade-up">
+
+    <div class="w-full md:w-1/2 text-center md:text-left mt-10 md:mt-0">
         <h1 class="text-4xl md:text-6xl font-bold mb-4">Master Every Exam with Confidence</h1>
         <p class="text-lg md:text-2xl mb-8 text-gray-600">All-in-one resources for certifications like CFA, MCAT, LSAT, GRE, and more.</p>
         <a href="/certifications/" class="bg-orange-500 text-white px-8 py-4 rounded-full text-xl font-bold hover:bg-orange-600">Start Learning Today</a>
         <p class="mt-4 text-gray-500">Your success starts with CertEasy.</p>
     </div>
-    <div class="md:w-1/2 mb-10 md:mb-0">
-        <img src="/static/uploads/dashboard.png" alt="Dashboard Preview" class="rounded-xl shadow-lg">
+    <div class="w-full md:w-1/2 flex justify-center">
+        <img src="/static/uploads/dashboard.svg" alt="Dashboard Preview" class="w-full max-w-md md:max-w-full">
     </div>
 </section>
 
@@ -40,19 +41,19 @@
     <div class="text-center max-w-4xl mx-auto">
         <h2 class="text-3xl font-bold mb-10">Browse Certification Paths</h2>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-8 items-center">
-            <a href="/certifications/mcat" class="block transform hover:scale-105 transition-transform">
+            <a href="/certifications/mcat" class="block transform hover:scale-105 transition-transform p-4 bg-white rounded-lg shadow hover:border-4 hover:border-pink-400">
                 <img src="/static/uploads/mcat.jpg" alt="MCAT" class="h-20 mx-auto">
             </a>
-            <a href="/certifications/cfa" class="block transform hover:scale-105 transition-transform">
+            <a href="/certifications/cfa" class="block transform hover:scale-105 transition-transform p-4 bg-white rounded-lg shadow hover:border-2 hover:border-orange-400">
                 <img src="/static/uploads/cfa.png" alt="CFA" class="h-20 mx-auto">
             </a>
-            <a href="/certifications/gre" class="block transform hover:scale-105 transition-transform">
+            <a href="/certifications/gre" class="block transform hover:scale-105 transition-transform p-4 bg-white rounded-lg shadow hover:border-2 hover:border-orange-400">
                 <img src="/static/uploads/gre.webp" alt="GRE" class="h-20 mx-auto">
             </a>
-            <a href="/certifications/lsat" class="block transform hover:scale-105 transition-transform">
+            <a href="/certifications/lsat" class="block transform hover:scale-105 transition-transform p-4 bg-white rounded-lg shadow hover:border-2 hover:border-orange-400">
                 <img src="/static/uploads/lsat.png" alt="LSAT" class="h-20 mx-auto">
             </a>
-            <a href="/certifications/gmat" class="block transform hover:scale-105 transition-transform">
+            <a href="/certifications/gmat" class="block transform hover:scale-105 transition-transform p-4 bg-white rounded-lg shadow hover:border-2 hover:border-orange-400">
                 <img src="/static/uploads/gmat.jpg" alt="GMAT" class="h-20 mx-auto">
             </a>
         </div>
@@ -60,77 +61,194 @@
 </section>
 
 <!-- Pricing Options -->
-<section class="py-20 text-center" data-aos="fade-up">
-    <div class="max-w-4xl mx-auto">
-        <div class="space-y-10">
-            <div class="bg-white shadow-lg rounded-lg p-8">
-                <h3 class="text-2xl font-bold mb-2">Unlimited Access Plan</h3>
-                <p class="text-gray-600">Unlock every course, guide, and tool with a simple subscription.</p>
-                <a href="/pricing/" class="mt-4 inline-block bg-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-orange-600">View Pricing</a>
-            </div>
-            <div class="bg-white shadow-lg rounded-lg p-8">
-                <h3 class="text-2xl font-bold mb-2">Certification Bundles</h3>
-                <p class="text-gray-600">Save more by bundling related certification paths.</p>
-                <a href="/bundles/" class="mt-4 inline-block bg-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-orange-600">Explore Bundles</a>
-            </div>
-        </div>
+<!-- Pricing Section -->
+<section class="py-20 bg-white" data-aos="fade-up">
+  <div class="max-w-6xl mx-auto px-6 text-center">
+    <h2 class="text-4xl font-bold mb-4">Flexible Plans for Every Learner</h2>
+    <p class="text-gray-600 mb-12">Choose a subscription that fits your journey. One subscription unlocks access to a particular certification's full resources.</p>
+
+    <div class="grid md:grid-cols-2 gap-8">
+      <!-- Monthly Plan -->
+      <div class="bg-white shadow-xl rounded-2xl p-8 flex flex-col justify-between border-2 border-orange-500 transition-transform transform hover:-translate-y-2 hover:shadow-2xl">
+    <div>
+        <br>
+      <h3 class="text-2xl font-bold mb-4" style="color: #22836e;">Monthly Access</h3>
+      <p class="text-gray-600 mb-6">Get full access to one certification library, billed monthly. Cancel anytime.</p>
+      <p class="text-4xl font-bold mb-6" style="color: #22836e;">$19<span class="text-xl text-black font-normal">/month</span></p>
     </div>
+    <a href="/subscribe/monthly" class="mt-4 bg-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-orange-600">Get Monthly Access</a>
+</div>
+
+<!-- Yearly Plan -->
+<div class="bg-white shadow-xl rounded-2xl p-8 flex flex-col justify-between border-2 border-orange-500 transition-transform transform hover:-translate-y-2 hover:shadow-2xl">
+    <div>
+        <br>
+      <h3 class="text-2xl font-bold mb-4 text-orange-500" style="color: #22836e;">Yearly Access <span class="text-sm  text-black rounded-full px-2 py-1 ml-2"style="background-color: #f55571;">Best Value</span></h3>
+      <p class="text-gray-600 mb-6">Save more with an annual plan. Full access to one certification for a full year.</p>
+      <p class="text-4xl font-bold mb-6" style="color: #22836e;">$180<span class="text-xl text-black font-normal">/year</span></p>
+    </div>
+    <a href="/subscribe/yearly" class="mt-4 bg-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-orange-600">Get Yearly Access</a>
+</div>
+
+    </div>
+
+    <p class="mt-12 text-gray-500 text-sm">
+      * Access is tied to the specific certification you subscribe to.
+      * Upgrade or switch certifications anytime.
+    </p>
+  </div>
 </section>
+
 
 <!-- Testimonials -->
-<section class="bg-gray-100 py-20" data-aos="fade-up">
-    <div class="text-center max-w-6xl mx-auto">
-        <h2 class="text-3xl font-bold mb-10">What Our Students Are Saying</h2>
-        <div class="grid md:grid-cols-3 gap-8">
-            <div class="p-6 bg-white rounded-lg shadow-md">★★★★★<br>"An amazing resource that helped me ace the CFA Level 1!"</div>
-            <div class="p-6 bg-white rounded-lg shadow-md">★★★★★<br>"Passed my MCAT on the first try thanks to CertEasy!"</div>
-            <div class="p-6 bg-white rounded-lg shadow-md">★★★★★<br>"The GRE prep materials are outstanding!"</div>
+<section class="bg-gray-100 py-20 overflow-hidden" data-aos="fade-up">
+  <div class="text-center max-w-6xl mx-auto">
+    <h2 class="text-3xl font-bold mb-10">What Our Students Are Saying</h2>
+
+    <div class="relative">
+      <div class="flex space-x-8 animate-marquee">
+
+        <!-- Testimonial 1 -->
+        <div class="min-w-[300px] p-6 bg-white rounded-lg shadow-md">
+          <p class=" text-xl mb-2" style="color: #f55571;">★★★★★</p>
+          <p class="text-gray-700 italic mb-4">"An amazing resource that helped me ace the CFA Level 1!"</p>
+          <p class="font-bold " style="color: #22836e;">— Sarah Johnson</p>
         </div>
+
+        <!-- Testimonial 2 -->
+        <div class="min-w-[300px] p-6 bg-white rounded-lg shadow-md">
+          <p class=" text-xl mb-2" style="color: #f55571;">★★★★★</p>
+          <p class="text-gray-700 italic mb-4">"Passed my MCAT on the first try thanks to CertEasy!"</p>
+          <p class="font-bold " style="color: #22836e;">— David Kim</p>
+        </div>
+
+        <!-- Testimonial 3 -->
+        <div class="min-w-[300px] p-6 bg-white rounded-lg shadow-md">
+          <p class=" text-xl mb-2" style="color: #f55571;">★★★★★</p>
+          <p class="text-gray-700 italic mb-4">"The GRE prep materials are outstanding and easy to follow."</p>
+          <p class="font-bold " style="color: #22836e;">— Maria Lopez</p>
+        </div>
+
+        <!-- Testimonial 4 -->
+        <div class="min-w-[300px] p-6 bg-white rounded-lg shadow-md">
+          <p class=" text-xl mb-2" style="color: #f55571;">★★★★★</p>
+          <p class="text-gray-700 italic mb-4">"CertEasy made my LSAT preparation smooth and stress-free."</p>
+          <p class="font-bold " style="color: #22836e;">— Jason Patel</p>
+        </div>
+
+        <!-- Testimonial 5 -->
+        <div class="min-w-[300px] p-6 bg-white rounded-lg shadow-md">
+          <p class=" text-xl mb-2" style="color: #f55571;">★★★★★</p>
+          <p class="text-gray-700 italic mb-4">"The resources are incredibly detailed and easy to access."</p>
+          <p class="font-bold " style="color: #22836e;">— Emily Chen</p>
+        </div>
+
+      </div>
     </div>
+  </div>
 </section>
 
-<!-- Meet Your Mentors -->
-<section class="py-20 text-center" data-aos="fade-up">
-    <h2 class="text-3xl font-bold mb-4">Learn from the Best in the Industry</h2>
-    <div class="flex flex-col items-center mt-10">
-        <img src="/static/uploads/instructor.png" alt="Instructor" class="h-40 w-40 rounded-full shadow-lg">
-        <ul class="mt-6 space-y-2 text-lg">
-            <li>🎓 Certified Experts in Finance, Medicine, Law, and Tech</li>
-            <li>📚 Decades of Real-world Experience</li>
-            <li>🌍 Global Recognition and Credentials</li>
-        </ul>
-    </div>
-</section>
+<!-- AI Learning Assistant Section -->
+<section class="py-20 text-center bg-white" data-aos="fade-up">
+  <h2 class="text-4xl font-bold mb-6">Empower Your Learning with AI-Driven Resources</h2>
+  <p class="text-gray-600 max-w-3xl mx-auto mb-12">
+    Our intelligent AI transforms expert-created PDF materials into engaging videos, dynamic quizzes, and interactive flashcards — giving you a complete, personalized learning experience like never before.
+  </p>
 
-<!-- Cheat Sheets Section -->
-<section class="bg-gray-50 py-20" data-aos="fade-up">
-    <div class="text-center max-w-4xl mx-auto">
-        <h2 class="text-3xl font-bold mb-8">Concise Cheat Sheets for Every Exam</h2>
-        <img src="/static/uploads/cheatsheet.png" alt="CheatSheet Preview" class="mx-auto rounded-lg shadow-lg">
+  <div class="max-w-5xl mx-auto grid md:grid-cols-3 gap-8 text-left">
+    <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition duration-300">
+      <h3 class="text-2xl font-bold mb-4">🎥 AI-Generated Video Lessons</h3>
+      <p class="text-gray-700">Visualize key concepts through AI-crafted video summaries based on certification materials.</p>
     </div>
-</section>
 
-<!-- Study Tools Promo -->
-<section class="py-20 text-center" data-aos="fade-up">
-    <h2 class="text-3xl font-bold mb-6">Smart Learning Tools to Boost Your Memory</h2>
-    <p class="text-lg mb-10">⚡ Spaced repetition flashcards to make every concept stick.</p>
-    <img src="/static/uploads/flashcards.png" alt="Flashcards Preview" class="mx-auto rounded-lg shadow-lg">
+    <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition duration-300">
+      <h3 class="text-2xl font-bold mb-4">📝 Smart Quizzes</h3>
+      <p class="text-gray-700">Test your knowledge instantly with AI-generated quizzes tailored to your study progress and focus areas.</p>
+    </div>
+
+    <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition duration-300">
+      <h3 class="text-2xl font-bold mb-4">🧠 Interactive Flashcards</h3>
+      <p class="text-gray-700">Master critical concepts faster using AI-built flashcards, optimized for memory retention and recall.</p>
+    </div>
+  </div>
 </section>
 
 <!-- Q&A Community Promo -->
-<section class="bg-gray-100 py-20" data-aos="fade-up">
-    <div class="text-center max-w-6xl mx-auto">
-        <h2 class="text-3xl font-bold mb-8">Have Questions? We've Got Answers</h2>
-        <img src="/static/uploads/qa.png" alt="Q&A Preview" class="mx-auto rounded-lg shadow-lg">
+<section class="bg-gray-100 py-20" data-aos="fade-up" x-data="{ selected: null }">
+  <div class="text-center max-w-6xl mx-auto">
+    <h2 class="text-3xl font-bold mb-8">Have Questions? We've Got Answers</h2>
+
+    <div class="max-w-4xl mx-auto text-left space-y-4">
+
+      <!-- Accordion Item -->
+      <div class="bg-white rounded-lg shadow" @click="selected !== 1 ? selected = 1 : selected = null">
+        <div class="cursor-pointer p-6 font-semibold text-lg flex justify-between items-center">
+          <span>📄 How does the AI create videos, quizzes, and flashcards?</span>
+          <span x-show="selected !== 1">+</span>
+          <span x-show="selected === 1">−</span>
+        </div>
+        <div x-show="selected === 1" x-collapse class="p-6 pt-0 text-gray-700">
+          Our team carefully curates official study materials (PDFs) for each certification. Our AI then processes these materials to automatically generate engaging video lessons, interactive quizzes, and flashcards tailored to the specific certification topics.
+        </div>
+      </div>
+
+      <!-- Accordion Item 2 -->
+      <div class="bg-white rounded-lg shadow" @click="selected !== 2 ? selected = 2 : selected = null">
+        <div class="cursor-pointer p-6 font-semibold text-lg flex justify-between items-center">
+          <span>💡 Can I upload my own materials?</span>
+          <span x-show="selected !== 2">+</span>
+          <span x-show="selected === 2">−</span>
+        </div>
+        <div x-show="selected === 2" x-collapse class="p-6 pt-0 text-gray-700">
+          Currently, only our platform-provided materials are supported. This ensures all AI-generated content remains consistent, high-quality, and aligned with official certification standards.
+        </div>
+      </div>
+
+      <!-- Accordion Item 3 -->
+      <div class="bg-white rounded-lg shadow" @click="selected !== 3 ? selected = 3 : selected = null">
+        <div class="cursor-pointer p-6 font-semibold text-lg flex justify-between items-center">
+          <span>⏳ How quickly are the AI-generated resources available?</span>
+          <span x-show="selected !== 3">+</span>
+          <span x-show="selected === 3">−</span>
+        </div>
+        <div x-show="selected === 3" x-collapse class="p-6 pt-0 text-gray-700">
+          Once you subscribe, the AI-generated videos, quizzes, and flashcards for your selected certification are available almost instantly — no waiting required.
+        </div>
+      </div>
+
+      <!-- Accordion Item 4 -->
+      <div class="bg-white rounded-lg shadow" @click="selected !== 4 ? selected = 4 : selected = null">
+        <div class="cursor-pointer p-6 font-semibold text-lg flex justify-between items-center">
+          <span>🔒 Is the AI content accurate and trustworthy?</span>
+          <span x-show="selected !== 4">+</span>
+          <span x-show="selected === 4">−</span>
+        </div>
+        <div x-show="selected === 4" x-collapse class="p-6 pt-0 text-gray-700">
+          Absolutely. All materials used for AI generation are sourced from trusted, expert-curated content, and the AI algorithms are continuously refined to ensure high accuracy and relevance.
+        </div>
+      </div>
+
+      <!-- Accordion Item 5 -->
+      <div class="bg-white rounded-lg shadow" @click="selected !== 5 ? selected = 5 : selected = null">
+        <div class="cursor-pointer p-6 font-semibold text-lg flex justify-between items-center">
+          <span>📚 Can I switch to a different certification later?</span>
+          <span x-show="selected !== 5">+</span>
+          <span x-show="selected === 5">−</span>
+        </div>
+        <div x-show="selected === 5" x-collapse class="p-6 pt-0 text-gray-700">
+          Yes! You can easily switch your subscription to another certification path anytime. New AI-powered resources will be ready for your new journey.
+        </div>
+      </div>
+
     </div>
+  </div>
 </section>
+
 
 <!-- Footer -->
 <footer class="bg-gray-800 text-white py-8 text-center">
     <div class="space-x-6 mb-4">
         <a href="/about/" class="hover:underline">About Us</a>
-        <a href="/articles/" class="hover:underline">Articles</a>
-        <a href="/faq/" class="hover:underline">FAQ</a>
         <a href="/contact/" class="hover:underline">Contact</a>
         <a href="/privacy/" class="hover:underline">Privacy Policy</a>
     </div>
@@ -141,6 +259,20 @@
 <script>
     AOS.init();
 </script>
+
+<style>
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  display: flex;
+  width: 200%;
+  animation: marquee 25s linear infinite;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
 </body>
 </html>

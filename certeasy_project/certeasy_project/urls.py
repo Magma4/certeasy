@@ -25,4 +25,6 @@ urlpatterns = [
     path('api/accounts/', include('accounts.urls')),
     path('api/certifications/', include('certifications.urls')),
     path('api/resources/', include('resources.urls')),
+    path('api/flashcards/', include('flashcards.urls')),
+    path('api/quizzes/', include('quizzes.urls')),
 ]
