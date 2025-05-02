@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ sidebarOpen: false, profileOpen: false }" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard - CertEasy</title>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="h-screen overflow-hidden">
+
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed z-30 inset-y-0 left-0 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
+      <div class="flex flex-col justify-between h-full">
+        <div>
+          <div class="flex items-center space-x-2 px-6 py-5 border-b border-gray-700">
+            <img src="/static/uploads/ce.png" alt="Logo" class="h-8">
+            <span class="font-bold text-white text-lg">CertEasy</span>
+          </div>
+          <nav class="mt-6 flex flex-col space-y-1 px-4 text-sm">
+            <a href="/dashboard/" class="flex items-center px-3 py-2 rounded bg-gray-800 text-white font-medium">📊 Overview</a>
+            <a href="/certifications/" class="flex items-center px-3 py-2 rounded hover:bg-gray-800">🎓 My Certifications</a>
+            <a href="/resources/" class="flex items-center px-3 py-2 rounded hover:bg-gray-800">📚 Resources</a>
+            <a href="/flashcards/" class="flex items-center px-3 py-2 rounded hover:bg-gray-800">🧠 Flashcards</a>
+            <a href="/quizzes/" class="flex items-center px-3 py-2 rounded hover:bg-gray-800">📝 Quizzes</a>
+            <a href="/discussions/" class="flex items-center px-3 py-2 rounded hover:bg-gray-800">💬 Community</a>
+            <a href="/settings/" class="flex items-center px-3 py-2 rounded hover:bg-gray-800">⚙️ Settings</a>
+            <a href="/support/" class="flex items-center px-3 py-2 rounded hover:bg-gray-800">🆘 Support</a>
+          </nav>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- Overlay on small screens -->
+    <div x-show="sidebarOpen" class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" @click="sidebarOpen = false"></div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-full overflow-y-auto">
+
+      <!-- Top bar -->
+      <header class="bg-white shadow px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-4 lg:hidden">
+          <button @click="sidebarOpen = !sidebarOpen" class="text-gray-700 focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <span class="font-semibold text-lg">Dashboard</span>
+        </div>
+        <div class="flex-1 flex justify-end items-center space-x-6">
+          <div class="relative" x-data="{ open: false }">
+            <button @click="notifyOpen = !notifyOpen" class="relative">
+              <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C8.67 6.165 8 7.388 8 9v5.159c0 .538-.214 1.055-.595 1.436L6 17h5" />
+              </svg>
+              <span class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-pink-500 rounded-full">3</span>
+            </button>
+            <div x-show="notifyOpen" @click.away="notifyOpen = false" x-transition class="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg z-50">
+              <div class="p-4 border-b font-semibold text-gray-700">Notifications</div>
+              <ul class="text-sm text-gray-600 max-h-60 overflow-y-auto">
+                <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">New flashcards added for GRE</li>
+                <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">CFA Level I exam schedule released</li>
+                <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Join your study room now</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
+              <img src="https://ui-avatars.com/api/?name=User" class="w-8 h-8 rounded-full" alt="User avatar">
+              <span class="text-sm font-medium text-gray-700 hidden md:inline">Learner</span>
+            </button>
+            <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50">
+              <a href="{% url 'profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+              <a href="{% url 'settings' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+              <a href="{% url 'account_logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+            </div>
+          </div>
+        </div>
+      </header>
+      {% block content %}
+      <!-- Page content -->
+      <main class="p-10">
+        <h1 class="text-3xl font-bold mb-6">Welcome back, <span class="text-green-700">Learner</span> 🎓</h1>
+        <div class="grid md:grid-cols-3 gap-6">
+          <div class="bg-white p-6 rounded-xl shadow hover:shadow-md transition transform hover:scale-[1.01]">
+            <h2 class="text-lg font-semibold mb-2">My Certifications</h2>
+            <ul class="list-disc ml-5 text-sm text-gray-600">
+              <li>CFA Level I</li>
+              <li>GRE</li>
+              <li>MCAT</li>
+            </ul>
+            <a href="/certifications/" class="text-green-700 text-sm font-medium hover:underline mt-3 inline-block">View All</a>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl shadow hover:shadow-md transition transform hover:scale-[1.01]">
+            <h2 class="text-lg font-semibold mb-2">Resources</h2>
+            <p class="text-sm text-gray-600">Access your personalized study paths, flashcards, and videos.</p>
+            <a href="/resources/" class="text-green-700 text-sm font-medium hover:underline mt-3 inline-block">Go to Resources</a>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl shadow hover:shadow-md transition transform hover:scale-[1.01]">
+            <h2 class="text-lg font-semibold mb-2">Study Community</h2>
+            <p class="text-sm text-gray-600">Join live rooms, match with peers, and engage in discussions.</p>
+            <a href="/discussions/" class="text-green-700 text-sm font-medium hover:underline mt-3 inline-block">Join the Discussion</a>
+          </div>
+        </div>
+      </main>
+      {% endblock %}
+    </div>
+  </div>
+
+</body>
+</html>

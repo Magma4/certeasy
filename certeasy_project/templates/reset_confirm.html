@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reset Password - CertEasy</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+    <div class="flex flex-col items-center mb-6">
+      <img src="/static/uploads/ce.png" alt="CertEasy Logo" class="h-12 mb-4">
+      <h2 class="text-2xl font-semibold text-gray-800">Reset Your Password</h2>
+      <p class="text-sm text-gray-500 text-center mt-1">You are almost done. Enter a new password.</p>
+    </div>
+    <form id="resetForm" class="space-y-4">
+      <input type="hidden" name="uid">
+      <input type="hidden" name="token">
+      <input type="password" name="new_password1" placeholder="New Password" required class="w-full p-3 border rounded-xl">
+      <input type="password" name="new_password2" placeholder="Confirm New Password" required class="w-full p-3 border rounded-xl">
+      <button type="submit" class="w-full bg-green-700 hover:bg-green-800 text-white py-2 rounded-full font-semibold transition">Reset Password</button>
+    </form>
+    <p class="text-center text-sm mt-4">Already changed your password? <a href="/login/" class="text-pink-600 hover:underline font-medium">Log in</a></p>
+  </div>
+
+  <script>
+    // Autofill UID and token from URL path segments
+    window.addEventListener("DOMContentLoaded", () => {
+      const parts = window.location.pathname.split('/');
+      const uid = parts[parts.length - 2];
+      const token = parts[parts.length - 1];
+      document.querySelector('input[name="uid"]').value = uid;
+      document.querySelector('input[name="token"]').value = token;
+    });
+
+    document.getElementById("resetForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const res = await fetch("/api/auth/password/reset/confirm/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid: form.uid.value,
+          token: form.token.value,
+          new_password1: form.new_password1.value,
+          new_password2: form.new_password2.value
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Password reset successful! You can now log in.");
+        window.location.href = "/login/";
+      } else {
+        alert("Reset failed: " + JSON.stringify(data));
+      }
+    });
+  </script>
+</body>
+</html>

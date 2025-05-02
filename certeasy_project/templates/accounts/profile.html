@@ -1,0 +1,24 @@
+
+{% extends 'dashboard.html' %}
+{% block content %}
+<div class="max-w-5xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-12">
+  <div class="text-center mb-8">
+    <h1 class="text-4xl font-bold text-gray-800">My Profile</h1>
+    <p class="text-gray-500">Manage your account information</p>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div>
+      <p class="text-sm text-gray-600 font-medium">Full Name</p>
+      <p class="text-xl text-gray-900 font-semibold">{{ user.get_full_name }}</p>
+    </div>
+    <div>
+      <p class="text-sm text-gray-600 font-medium">Username</p>
+      <p class="text-xl text-gray-900 font-semibold">{{ user.username }}</p>
+    </div>
+    <div>
+      <p class="text-sm text-gray-600 font-medium">Email</p>
+      <p class="text-xl text-gray-900 font-semibold">{{ user.email }}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

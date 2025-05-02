@@ -16,15 +16,27 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .views import landing_page
+from .views import *
 
 urlpatterns = [
     path('', landing_page, name='landing_page'),
     path('admin/', admin.site.urls),
-    path('api/auth/', include('dj_rest_auth.urls')),
+    path('login/', login_page, name='login'),
+    path('signup/', signup_page, name='signup'),
+    path('dashboard/', dashboard_page, name='dashboard'),
+    path('forgot-password/', forgot_password_page, name='forgot_password'),
+    path('password-reset-confirm/<uidb64>/<token>/', reset_confirm_page, name='password_reset_confirm'),
+
+    # API endpoints
+    path('api/auth/', include('dj_rest_auth.urls')),  # login, logout, etc.
+    path('api/auth/registration/', include('dj_rest_auth.registration.urls')),  # optional
+
     path('api/accounts/', include('accounts.urls')),
     path('api/certifications/', include('certifications.urls')),
     path('api/resources/', include('resources.urls')),
     path('api/flashcards/', include('flashcards.urls')),
     path('api/quizzes/', include('quizzes.urls')),
+    path('api/discussions/', include('discussions.urls')),
+
+    path('accounts/', include('allauth.urls')),
 ]

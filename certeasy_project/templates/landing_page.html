@@ -12,13 +12,13 @@
 
 <!-- Navbar -->
 <nav class="sticky top-0 z-50 bg-white flex justify-between items-center p-6 shadow-md">
-    <div class="flex items-center space-x-2">
-        <img src="/static/uploads/ce.png" alt="CertEasy Logo" class="h-10" >
-    </div>
+
+        <img src="/static/uploads/ce.png" alt="CertEasy Logo" class="h-10"s>
+
     <div class="flex items-center space-x-4">
         <a href="/help/" class="px-4 py-2 rounded-full font-semibold text-gray-700 hover:bg-gray-200 transition">Help Center</a>
-        <a href="/login/" class=" text-white px-4 py-2 rounded-full font-semibold hover:bg-green-800 hover:shadow-md transition" style="background-color: #22836e;">Log In</a>
-        <a href="/signup/" class="text-black px-5 py-2 rounded-full font-semibold hover:bg-pink-600 hover:shadow-md transition" style="background-color: #f55571;">Get Started</a>
+        <a href="{% url 'login' %}" class=" text-white px-4 py-2 rounded-full font-semibold hover:bg-green-800 hover:shadow-md transition" style="background-color: #22836e;">Log In</a>
+        <a href="{% url 'signup' %}" class="text-black px-5 py-2 rounded-full font-semibold hover:bg-pink-600 hover:shadow-md transition" style="background-color: #f55571;">Get Started</a>
     </div>
 </nav>
 

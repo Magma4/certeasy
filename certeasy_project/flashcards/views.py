@@ -1,17 +1,20 @@
-from rest_framework import generics
+from rest_framework import generics, permissions, filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.permissions import IsAuthenticated
 from .models import Flashcard
 from .serializers import FlashcardSerializer
-from rest_framework.permissions import IsAuthenticated
 
 
 class FlashcardListCreateView(generics.ListCreateAPIView):
-
+    queryset = Flashcard.objects.all()
     serializer_class = FlashcardSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    search_fields = ['front_text', 'back_text', 'topic']
+    filterset_fields = ['certification', 'topic']
+    ordering_fields = ['created_at']
+
     def get_queryset(self):
-        certification_id = self.request.query_params.get('certification_id')
-        if certification_id:
-            return Flashcard.objects.filter(certification_id=certification_id)
         return Flashcard.objects.all()
 
 class FlashcardDetailView(generics.RetrieveUpdateDestroyAPIView):

@@ -2,16 +2,16 @@ from rest_framework import generics
 from .models import Quiz
 from .serializers import QuizSerializer
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 class QuizListCreateView(generics.ListCreateAPIView):
     serializer_class = QuizSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        certification_id = self.request.query_params.get('certification_id')
-        if certification_id:
-            return Quiz.objects.filter(certification_id=certification_id)
-        return Quiz.objects.all()
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    search_fields = ['title']
+    filterset_fields = ['certification']
+    ordering_fields = ['created_at']
 
 
 class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
