@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ sidebarOpen: false, profileOpen: false, notifyOpen: false, filterOpen: false, uploadModal: false }" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resources - CertEasy</title>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<style>
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out forwards;
+  }
+
+  @keyframes pulse-subtle {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s infinite;
+  }
+
+  .animate-delay-1 {
+    animation-delay: 0.2s;
+  }
+
+  .animate-delay-2 {
+    animation-delay: 0.4s;
+  }
+
+  .animate-delay-3 {
+    animation-delay: 0.6s;
+  }
+
+  .shadow-inner {
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .card-hover {
+    transition: all 0.3s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .progress-gradient {
+    background: linear-gradient(90deg, #10B981 0%, #34D399 100%);
+  }
+
+  .sidebar-link {
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+  }
+
+  .sidebar-link:hover {
+    border-left: 3px solid #10B981;
+  }
+
+  .sidebar-link-active {
+    border-left: 3px solid #10B981;
+    background-color: rgba(16, 185, 129, 0.1);
+  }
+
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .notification-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444;
+    border-radius: 50%;
+  }
+
+  .cert-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+
+  .cert-card:hover {
+    border-color: #10B981;
+  }
+
+  .slide-in {
+    transform: translateX(0);
+    opacity: 1;
+    transition: all 0.5s ease;
+  }
+
+  .slide-out {
+    transform: translateX(-20px);
+    opacity: 0;
+    transition: all 0.5s ease;
+  }
+
+  .filter-chip {
+    transition: all 0.2s ease;
+  }
+
+  .filter-chip:hover {
+    background-color: #10B981;
+    color: white;
+  }
+
+  .filter-chip-active {
+    background-color: #10B981;
+    color: white;
+  }
+
+  .resource-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .tab-active {
+    color: #10B981;
+    border-bottom: 2px solid #10B981;
+  }
+
+  .modal-overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+  }
+
+  .modal-container {
+    background-color: white;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 100%;
+    margin: 2rem auto;
+    padding: 1rem;
+    z-index: 50;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+</style>
+<body class="h-screen overflow-hidden font-sans">
+
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed z-30 inset-y-0 left-0 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
+      <div class="flex flex-col justify-between h-full">
+        <div>
+          <div class="flex items-center space-x-2 px-6 py-5 border-b border-gray-700">
+            <div class="bg-white p-1 rounded-md">
+              <img src="/static/uploads/ce.png" alt="Logo" class="h-8">
+            </div>
+            <span class="font-bold text-white text-lg">CertEasy</span>
+          </div>
+          <nav class="mt-6 flex flex-col space-y-1 px-3 text-sm">
+            <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active text-white font-medium">
+              <i class="fas fa-chart-line mr-3 text-green-300"></i> Overview
+            </a>
+            <a href="{% url 'mycertifications' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-graduation-cap mr-3 text-green-300"></i> My Certifications
+            </a>
+            <a href="{% url 'resources' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-book mr-3 text-green-300"></i> Resources
+            </a>
+            <a href="/flashcards/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-brain mr-3 text-green-300"></i> Flashcards
+            </a>
+            <a href="/quizzes/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-clipboard-check mr-3 text-green-300"></i> Quizzes
+            </a>
+            <a href="/discussions/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-comments mr-3 text-green-300"></i> Community
+            </a>
+            <a href="/settings/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-cog mr-3 text-green-300"></i> Settings
+            </a>
+            <a href="/support/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-life-ring mr-3 text-green-300"></i> Support
+            </a>
+          </nav>
+        </div>
+
+        <div class="p-4 m-4 bg-gray-800 rounded-lg">
+          <div class="flex items-center mb-3">
+            <i class="fas fa-rocket text-green-300 mr-2"></i>
+            <h4 class="font-medium text-white">Pro Upgrade</h4>
+          </div>
+          <p class="text-xs text-gray-300 mb-3">Get unlimited access to all certification materials</p>
+          <button class="w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
+            Upgrade Now
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Overlay on small screens -->
+    <div x-show="sidebarOpen" class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" @click="sidebarOpen = false"></div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50">
+
+      <!-- Top bar -->
+      <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+        <div class="flex items-center space-x-4 lg:hidden">
+          <button @click="sidebarOpen = !sidebarOpen" class="text-gray-700 focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <span class="font-semibold text-lg">Resources</span>
+        </div>
+
+        <div class="hidden lg:block">
+          <div class="relative">
+            <input type="text" placeholder="Search PDFs, videos, images..." class="w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+          </div>
+        </div>
+
+        <div class="flex-1 flex justify-end items-center space-x-4">
+          <a href="#" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
+            <i class="fas fa-calendar-alt"></i>
+          </a>
+
+          <div class="relative" x-data="{ open: false }">
+            <button @click="notifyOpen = !notifyOpen" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
+              <i class="fas fa-bell"></i>
+              <span class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-pink-500 rounded-full">3</span>
+            </button>
+            <div x-show="notifyOpen" @click.away="notifyOpen = false" x-transition class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-100">
+              <div class="p-4 border-b font-semibold text-gray-700 flex justify-between items-center">
+                <span>Notifications</span>
+                <span class="text-xs text-green-600 cursor-pointer hover:underline">Mark all as read</span>
+              </div>
+              <ul class="text-sm text-gray-600 max-h-72 overflow-y-auto">
+                <li class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                  <div class="flex items-start">
+                    <div class="bg-green-100 rounded-full p-2 mr-3">
+                      <i class="fas fa-file-pdf text-green-600 text-sm"></i>
+                    </div>
+                    <div>
+                      <p class="font-medium">New GRE study guide available</p>
+                      <p class="text-xs text-gray-500 mt-1">2 hours ago</p>
+                    </div>
+                  </div>
+                </li>
+                <li class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                  <div class="flex items-start">
+                    <div class="bg-blue-100 rounded-full p-2 mr-3">
+                      <i class="fas fa-video text-blue-600 text-sm"></i>
+                    </div>
+                    <div>
+                      <p class="font-medium">CFA quantitative methods video added</p>
+                      <p class="text-xs text-gray-500 mt-1">Yesterday</p>
+                    </div>
+                  </div>
+                </li>
+                <li class="px-4 py-3 hover:bg-gray-50 cursor-pointer">
+                  <div class="flex items-start">
+                    <div class="bg-purple-100 rounded-full p-2 mr-3">
+                      <i class="fas fa-image text-purple-600 text-sm"></i>
+                    </div>
+                    <div>
+                      <p class="font-medium">LSAT diagrams collection uploaded</p>
+                      <p class="text-xs text-gray-500 mt-1">2 days ago</p>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+              <div class="p-3 text-center border-t border-gray-100">
+                <a href="#" class="text-sm text-green-600 hover:underline">View all notifications</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
+              <div class="relative">
+                <img src="https://ui-avatars.com/api/?name=User&background=10B981&color=fff" class="w-9 h-9 rounded-full border-2 border-green-100" alt="User avatar">
+                <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+              </div>
+              <span class="text-sm font-medium text-gray-700 hidden md:inline">Learner</span>
+              <i class="fas fa-chevron-down text-xs text-gray-500 hidden md:inline"></i>
+            </button>
+            <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100">
+              <div class="px-4 py-3 border-b border-gray-100">
+                <p class="text-sm font-semibold">Learner</p>
+                <p class="text-xs text-gray-500">learner@example.com</p>
+              </div>
+              <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <i class="fas fa-user mr-3 text-gray-400 w-5"></i>
+                Profile
+              </a>
+              <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <i class="fas fa-cog mr-3 text-gray-400 w-5"></i>
+                Settings
+              </a>
+              <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <i class="fas fa-question-circle mr-3 text-gray-400 w-5"></i>
+                Help Center
+              </a>
+              <div class="border-t border-gray-100 mt-2"></div>
+              <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <i class="fas fa-sign-out-alt mr-3 text-gray-400 w-5"></i>
+                Logout
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="p-6 lg:p-10 bg-gray-50 text-gray-800 font-sans">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">Study Materials</h1>
+            <p class="text-gray-600 mt-1">PDFs, videos and images for your certification prep</p>
+          </div>
+
+        </div>
+
+        <!-- Filter Panel -->
+        <div x-show="filterOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" class="mb-8 bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+          <div class="flex flex-wrap justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-800">Filter Resources</h3>
+            <button @click="filterOpen = false" class="text-gray-400 hover:text-gray-600">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Resource Type</label>
+              <div class="flex flex-wrap gap-2">
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip filter-chip-active cursor-pointer">All</span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">PDF</span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Video</span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Image</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Certification</label>
+              <div class="flex flex-wrap gap-2">
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip filter-chip-active cursor-pointer">All</span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">GRE</span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">LSAT</span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">CFA</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Source</label>
+              <div class="flex flex-wrap gap-2">
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip filter-chip-active cursor-pointer">All</span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Official</span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Community</span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">AI-Generated</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end mt-4">
+            <button class="px-4 py-1 text-sm text-gray-600 hover:text-gray-800 mr-3">
+              Reset Filters
+            </button>
+            <button class="px-4 py-1 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 transition-colors">
+              Apply Filters
+            </button>
+          </div>
+        </div>
+
+        <!-- Resource Categories Tabs -->
+        <div class="mb-6 border-b border-gray-200">
+          <div class="flex space-x-8 overflow-x-auto scrollbar-hide">
+            <a href="{% url 'resources' %}" class="py-3 px-1 text-sm font-medium {% if not type_filter %}text-gray-800 tab-active border-b-2 border-green-500{% else %}text-gray-500 hover:text-gray-800{% endif %} focus:outline-none">All Resources</a>
+            <a href="{% url 'resources' %}?type=pdf{% if cert_filter %}&cert={{ cert_filter }}{% endif %}" class="py-3 px-1 text-sm font-medium {% if type_filter == 'pdf' %}text-gray-800 tab-active border-b-2 border-green-500{% else %}text-gray-500 hover:text-gray-800{% endif %} focus:outline-none">PDFs</a>
+            <a href="{% url 'resources' %}?type=video{% if cert_filter %}&cert={{ cert_filter }}{% endif %}" class="py-3 px-1 text-sm font-medium {% if type_filter == 'video' %}text-gray-800 tab-active border-b-2 border-green-500{% else %}text-gray-500 hover:text-gray-800{% endif %} focus:outline-none">Videos</a>
+            <a href="{% url 'resources' %}?type=image{% if cert_filter %}&cert={{ cert_filter }}{% endif %}" class="py-3 px-1 text-sm font-medium {% if type_filter == 'image' %}text-gray-800 tab-active border-b-2 border-green-500{% else %}text-gray-500 hover:text-gray-800{% endif %} focus:outline-none">Images & Diagrams</a>
+          </div>
+        </div>
+
+        <!-- Filter Form -->
+        <form method="get" class="mb-6 flex space-x-4">
+          <select name="cert" class="border rounded px-2 py-1">
+            <option value="">All Certifications</option>
+            {% for cert in certifications %}
+              <option value="{{ cert.id }}" {% if cert_filter == cert.id|stringformat:"s" %}selected{% endif %}>{{ cert.title }}</option>
+            {% endfor %}
+          </select>
+          <select name="type" class="border rounded px-2 py-1">
+            <option value="">All Types</option>
+            {% for code, label in types %}
+              <option value="{{ code }}" {% if type_filter == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="bg-green-600 text-white px-4 py-1 rounded">Filter</button>
+        </form>
+
+        <!-- Resource List -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-8">
+          <h3 class="text-lg font-semibold text-gray-900 mb-5">All Resources</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for resource in resources %}
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all">
+                <div class="flex justify-between items-start mb-4">
+                  <div class="flex items-center">
+                    <div class="resource-icon bg-gray-100">
+                      {% if resource.type == 'pdf' %}
+                        <i class="fas fa-file-pdf text-red-600"></i>
+                      {% elif resource.type == 'video' %}
+                        <i class="fas fa-video text-blue-600"></i>
+                      {% elif resource.type == 'image' %}
+                        <i class="fas fa-image text-green-600"></i>
+                      {% else %}
+                        <i class="fas fa-file text-gray-600"></i>
+                      {% endif %}
+                    </div>
+                    <div class="ml-3">
+                      <h4 class="font-semibold text-gray-800">{{ resource.title }}</h4>
+                      <p class="text-xs text-gray-500">{{ resource.get_type_display }}</p>
+                    </div>
+                  </div>
+                  <div class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
+                    {{ resource.certification.title }}
+                  </div>
+                </div>
+
+                {% if resource.file %}
+                  {% if resource.type == 'video' %}
+                    {% if resource.id in watched_videos %}
+                      <span class="inline-block bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full mb-2">Watched</span>
+                    {% endif %}
+                    <video controls class="w-full rounded mb-2" style="max-height:300px;" controlsList="nodownload" onended="markWatched({{ resource.id }})">
+                      <source src="{{ resource.file.url }}" type="video/mp4">
+                      Your browser does not support the video tag.
+                    </video>
+                  {% else %}
+                    <a href="{{ resource.file.url }}" class="text-blue-600 hover:underline mr-4" target="_blank" rel="noopener">
+                      View
+                    </a>
+                    <a href="{{ resource.file.url }}" class="text-green-600 hover:underline" download>
+                      Download
+                    </a>
+                  {% endif %}
+                {% endif %}
+              </div>
+            {% empty %}
+              <p class="text-gray-500">No resources found.</p>
+            {% endfor %}
+          </div>
+        </div>
+
+      </main>
+
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Function to toggle resource bookmark status
+      const bookmarkButtons = document.querySelectorAll('.fa-bookmark');
+      bookmarkButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          this.classList.toggle('text-yellow-500');
+        });
+      });
+    });
+
+    function markWatched(resourceId) {
+      const formData = new FormData();
+      formData.append('mark_watched_id', resourceId);
+      fetch('/resources', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+        },
+        credentials: 'same-origin',
+        body: formData
+      }).then(response => {
+        if (response.ok) {
+          location.reload();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

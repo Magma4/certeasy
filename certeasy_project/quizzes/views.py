@@ -6,6 +6,7 @@ from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 
 class QuizListCreateView(generics.ListCreateAPIView):
+    queryset = Quiz.objects.all() 
     serializer_class = QuizSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]

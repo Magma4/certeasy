@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from certifications.models import Certification
+from django.conf import settings
 
 User = get_user_model()
 
@@ -29,3 +30,12 @@ class Comment(models.Model):
 
     class Meta:
         ordering = ['created_at']
+
+
+class Like(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'post')

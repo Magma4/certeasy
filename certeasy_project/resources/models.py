@@ -1,5 +1,6 @@
 from django.db import models
 from certifications.models import Certification
+from django.conf import settings
 
 # Create your models here.
 class Resource(models.Model):
@@ -23,3 +24,11 @@ class Resource(models.Model):
 
     class Meta:
         ordering = ['title']
+
+class VideoView(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE)
+    watched_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'resource')

@@ -10,11 +10,11 @@ class User(AbstractUser):
 
 class Subscription(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='subscriptions')
-    certification = models.ForeignKey(Certification, on_delete=models.CASCADE)
+    certification = models.ForeignKey(Certification, on_delete=models.CASCADE, null=True, blank=True)  # <-- add this
     start_date = models.DateTimeField(auto_now_add=True)
-    end_date = models.DateTimeField(null=True, blank=True)  # For yearly/monthly expiration
+    end_date = models.DateTimeField(null=True, blank=True)
     active = models.BooleanField(default=True)
     plan = models.CharField(max_length=20, choices=[('monthly', 'Monthly'), ('yearly', 'Yearly')])
 
     def __str__(self):
-        return f"{self.user.email} - {self.certification.name} ({self.plan})"
+        return f"{self.user.email} - {self.certification.title} ({self.plan})"

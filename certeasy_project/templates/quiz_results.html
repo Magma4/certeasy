@@ -1,0 +1,53 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+{% load quiz_extras %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-lg shadow-md p-8 mb-8">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Quiz Results: {{ quiz.title }}</h1>
+            <p class="text-gray-600 mb-4">Certification: {{ quiz.certification.title }}</p>
+            <div class="flex items-center space-x-6 mb-4">
+                <div class="text-3xl font-bold text-green-600">{{ attempt.score|floatformat:1 }}%</div>
+                <div class="text-gray-700">{{ attempt.completed|yesno:"Completed,In Progress" }}</div>
+            </div>
+            <a href="{% url 'quizzes' %}" class="text-blue-600 hover:underline">Back to Quizzes</a>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">Questions & Answers</h2>
+            <div class="space-y-6">
+                {% for question in questions %}
+                {% with qid=question.id|stringformat:"s" %}
+                {% with user_answer=attempt.user_answers|get_item:qid %}
+
+                <div x-data="{ show: false }"
+                     class="border rounded-lg p-4 {% if user_answer == question.correct_answer %}bg-green-50 border-green-400{% elif user_answer %}bg-red-50 border-red-400{% endif %}">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-medium text-gray-900">Q{{ forloop.counter }}. {{ question.question_text }}</h3>
+                        <button @click="show = !show" class="text-sm text-blue-600 hover:underline focus:outline-none">
+                            <span x-text="show ? 'Hide Answer' : 'Show Answer'"></span>
+                        </button>
+                    </div>
+                    <div x-show="show" x-transition class="mt-4">
+                        <div class="mb-2">
+                            <span class="font-semibold text-gray-700">Your Answer:</span>
+                            <span class="{% if user_answer == question.correct_answer %}text-green-700{% elif user_answer %}text-red-700{% endif %}">{{ user_answer|default:'No answer' }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="font-semibold text-gray-700">Correct Answer:</span>
+                            <span class="text-green-700">{{ question.correct_answer }}</span>
+                        </div>
+                        <div class="text-gray-600 text-sm">
+                            <span class="font-semibold">Explanation:</span> {{ question.explanation|default:'No explanation provided.' }}
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% endwith %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

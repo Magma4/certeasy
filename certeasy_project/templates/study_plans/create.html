@@ -1,0 +1,195 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Create Study Plan</h1>
+            <a href="{% url 'study_plans:list' %}"
+               class="text-blue-600 hover:text-blue-800">
+                Back to List
+            </a>
+        </div>
+
+        <form method="post" class="bg-white rounded-lg shadow-md p-6">
+            {% csrf_token %}
+
+            <div class="space-y-6">
+                <!-- Certification Selection -->
+                <div>
+                    <label for="certification" class="block text-sm font-medium text-gray-700 mb-1">
+                        Certification
+                    </label>
+                    <select name="certification" id="certification" required
+                            class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Select a certification</option>
+                        {% for cert in certifications %}
+                        <option value="{{ cert.id }}">{{ cert.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Activity Type -->
+                <div>
+                    <label for="activity_type" class="block text-sm font-medium text-gray-700 mb-1">
+                        Activity Type
+                    </label>
+                    <select name="activity_type" id="activity_type" required
+                            class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Select activity type</option>
+                        <option value="quiz">Quiz</option>
+                        <option value="resource">Resource</option>
+                        <option value="flashcard">Flashcard Set</option>
+                        <option value="exam">Exam</option>
+                    </select>
+                </div>
+
+                <!-- Content Selection (Dynamic) -->
+                <div id="content_selection" class="hidden">
+                    <label for="content" class="block text-sm font-medium text-gray-700 mb-1">
+                        Select Content
+                    </label>
+                    <select name="content" id="content"
+                            class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Select content</option>
+                    </select>
+                </div>
+
+                <!-- Title -->
+                <div>
+                    <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
+                        Title
+                    </label>
+                    <input type="text" name="title" id="title" required
+                           class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <!-- Date and Time -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="scheduled_date" class="block text-sm font-medium text-gray-700 mb-1">
+                            Date
+                        </label>
+                        <input type="date" name="scheduled_date" id="scheduled_date" required
+                               class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="scheduled_time" class="block text-sm font-medium text-gray-700 mb-1">
+                            Time
+                        </label>
+                        <input type="time" name="scheduled_time" id="scheduled_time" required
+                               class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- Duration -->
+                <div>
+                    <label for="duration" class="block text-sm font-medium text-gray-700 mb-1">
+                        Duration (minutes)
+                    </label>
+                    <input type="number" name="duration" id="duration" required min="15" step="15"
+                           class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <!-- Exam Details (Dynamic) -->
+                <div id="exam_details" class="hidden space-y-4">
+                    <div>
+                        <label for="exam_date" class="block text-sm font-medium text-gray-700 mb-1">
+                            Exam Date
+                        </label>
+                        <input type="date" name="exam_date" id="exam_date"
+                               class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="exam_time" class="block text-sm font-medium text-gray-700 mb-1">
+                            Exam Time
+                        </label>
+                        <input type="time" name="exam_time" id="exam_time"
+                               class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="exam_location" class="block text-sm font-medium text-gray-700 mb-1">
+                            Exam Location
+                        </label>
+                        <input type="text" name="exam_location" id="exam_location"
+                               class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">
+                        Notes
+                    </label>
+                    <textarea name="notes" id="notes" rows="3"
+                              class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end">
+                    <button type="submit"
+                            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        Create Study Plan
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const activityTypeSelect = document.getElementById('activity_type');
+    const contentSelection = document.getElementById('content_selection');
+    const examDetails = document.getElementById('exam_details');
+    const certificationSelect = document.getElementById('certification');
+    const contentSelect = document.getElementById('content');
+
+    // Show/hide content selection based on activity type
+    activityTypeSelect.addEventListener('change', function() {
+        const selectedType = this.value;
+
+        // Hide all dynamic sections
+        contentSelection.classList.add('hidden');
+        examDetails.classList.add('hidden');
+
+        // Show relevant sections
+        if (['quiz', 'resource', 'flashcard'].includes(selectedType)) {
+            contentSelection.classList.remove('hidden');
+            updateContentOptions(selectedType);
+        } else if (selectedType === 'exam') {
+            examDetails.classList.remove('hidden');
+        }
+    });
+
+    // Update content options when certification changes
+    certificationSelect.addEventListener('change', function() {
+        if (activityTypeSelect.value) {
+            updateContentOptions(activityTypeSelect.value);
+        }
+    });
+
+    // Function to update content options
+    function updateContentOptions(activityType) {
+        const certificationId = certificationSelect.value;
+        if (!certificationId) return;
+
+        fetch(`/study-plans/get-activity-content/?certification_id=${certificationId}&activity_type=${activityType}`)
+            .then(response => response.json())
+            .then(data => {
+                contentSelect.innerHTML = '<option value="">Select content</option>';
+                data.content.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.title;
+                    contentSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching content:', error));
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

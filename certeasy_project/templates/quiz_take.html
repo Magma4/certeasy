@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{
+    sidebarOpen: false,
+    profileOpen: false,
+    notifyOpen: false,
+    currentQuestion: 0,
+    quizStarted: false,
+    quizCompleted: false,
+    showExplanation: false,
+    timeRemaining: 1800,
+    timerActive: false,
+    correctAnswers: 0,
+    incorrectAnswers: 0,
+    results: [],
+    answers: {},
+    notifications: {{ notifications|safe }},
+    stats: {{ user_stats|safe }},
+    studyPlan: {{ study_plan|safe }}
+}" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Quizzes - CertEasy</title>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<style>
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out forwards;
+  }
+
+  .answer-option {
+    transition: all 0.2s ease;
+  }
+
+  .answer-option:hover {
+    transform: translateY(-2px);
+  }
+
+  .answer-correct {
+    border-color: #10B981;
+    background-color: rgba(16, 185, 129, 0.1);
+  }
+
+  .answer-incorrect {
+    border-color: #EF4444;
+    background-color: rgba(239, 68, 68, 0.1);
+  }
+
+  .sidebar-link {
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+  }
+
+  .sidebar-link:hover {
+    border-left: 3px solid #10B981;
+  }
+
+  .sidebar-link-active {
+    border-left: 3px solid #10B981;
+    background-color: rgba(16, 185, 129, 0.1);
+  }
+
+  .progress-bar {
+    transition: width 0.3s ease;
+  }
+
+  .timer-warning {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  .question-transition {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+  }
+
+  .question-active {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<body class="h-screen overflow-hidden font-sans">
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed z-30 inset-y-0 left-0 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
+            <div class="flex flex-col justify-between h-full">
+                <div>
+                    <div class="flex items-center space-x-2 px-6 py-5 border-b border-gray-700">
+                        <div class="bg-white p-1 rounded-md">
+                            <img src="/static/uploads/ce.png" alt="Logo" class="h-8">
+                        </div>
+                        <span class="font-bold text-white text-lg">CertEasy</span>
+                    </div>
+                    <nav class="mt-6 flex flex-col space-y-1 px-3 text-sm">
+                        <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+                            <i class="fas fa-chart-line mr-3 text-green-300"></i> Overview
+                        </a>
+                        <a href="{% url 'mycertifications' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+                            <i class="fas fa-graduation-cap mr-3 text-green-300"></i> My Certifications
+                        </a>
+                        <a href="{% url 'resources' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+                            <i class="fas fa-book mr-3 text-green-300"></i> Resources
+                        </a>
+                        <a href="{% url 'flashcards' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+                            <i class="fas fa-brain mr-3 text-green-300"></i> Flashcards
+                        </a>
+                        <a href="/quizzes/" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active text-white font-medium">
+                            <i class="fas fa-clipboard-check mr-3 text-green-300"></i> Quizzes
+                        </a>
+                        <a href="/discussions/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+                            <i class="fas fa-comments mr-3 text-green-300"></i> Community
+                        </a>
+                        <a href="/settings/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+                            <i class="fas fa-cog mr-3 text-green-300"></i> Settings
+                        </a>
+                        <a href="/support/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+                            <i class="fas fa-life-ring mr-3 text-green-300"></i> Support
+                        </a>
+                    </nav>
+                </div>
+
+                <div class="p-4 m-4 bg-gray-800 rounded-lg">
+                    <div class="flex items-center mb-3">
+                        <i class="fas fa-rocket text-green-300 mr-2"></i>
+                        <h4 class="font-medium text-white">Pro Upgrade</h4>
+                    </div>
+                    <p class="text-xs text-gray-300 mb-3">Get unlimited access to all certification materials</p>
+                    <button class="w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
+                        Upgrade Now
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Overlay on small screens -->
+        <div x-show="sidebarOpen" class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" @click="sidebarOpen = false"></div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50">
+            <!-- Top bar -->
+            <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+                <div class="flex items-center space-x-4 lg:hidden">
+                    <button @click="sidebarOpen = !sidebarOpen" class="text-gray-700 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <span class="font-semibold text-lg">Quiz</span>
+                </div>
+
+                <div class="hidden lg:block">
+                    <div class="relative">
+                        <input type="text" placeholder="Search quizzes, topics..." class="w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex justify-end items-center space-x-4">
+                    <a href="/calendar/" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
+                        <i class="fas fa-calendar-alt"></i>
+                    </a>
+
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="notifyOpen = !notifyOpen" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
+                            <i class="fas fa-bell"></i>
+                            <span class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-pink-500 rounded-full">3</span>
+                        </button>
+                        <div x-show="notifyOpen" @click.away="notifyOpen = false" x-transition class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-100">
+                            <!-- Notification panel -->
+                        </div>
+                    </div>
+
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
+                            <div class="relative">
+                                <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=10B981&color=fff" class="w-9 h-9 rounded-full border-2 border-green-100" alt="User avatar">
+                                <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700 hidden md:inline">{{ user.get_full_name|default:user.username|title }}</span>
+                            <i class="fas fa-chevron-down text-xs text-gray-500 hidden md:inline"></i>
+                        </button>
+                        <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100">
+                            <!-- User dropdown -->
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <div class="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50">
+                <!-- Quiz Header -->
+                <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+                    <div class="flex items-center">
+                        <a href="{% url 'quiz_detail' quiz.id %}" class="mr-4 text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-800">{{ quiz.title }}</h1>
+                            <p class="text-sm text-gray-500">{{ quiz.certification.title }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                        <div :class="timeRemaining < 300 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'"
+                             class="px-4 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-clock mr-2"></i>
+                            <span x-text="formatTime(timeRemaining)"></span>
+                        </div>
+
+                        <button @click="if(confirm('Are you sure you want to exit? Your progress will be lost.')) { window.location.href = '{% url 'quiz_detail' quiz.id %}'; }"
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                            Exit
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Quiz Content -->
+                <main class="p-6 lg:p-10 bg-gray-50 text-gray-800 font-sans flex-1">
+                    <div class="max-w-4xl mx-auto" x-data="{ currentQuestion: 0, answers: {} }">
+                        <!-- Progress Bar -->
+                        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                            <div class="flex justify-between text-sm mb-2">
+                                <span x-text="`Question ${currentQuestion + 1} of {{ quiz.questions.count }}`" class="font-medium text-gray-700"></span>
+                                <span x-text="`${Math.round(((currentQuestion + 1) / {{ quiz.questions.count }}) * 100)}%`" class="text-gray-500"></span>
+                            </div>
+                            <div class="w-full h-2 bg-gray-100 rounded-full">
+                                <div class="h-full bg-green-600 rounded-full transition-all duration-300"
+                                     :style="`width: ${((currentQuestion + 1) / {{ quiz.questions.count }}) * 100}%`"></div>
+                            </div>
+                        </div>
+                        <!-- Debug: Show currentQuestion Alpine state -->
+                        <p x-text="'Current question: ' + currentQuestion" class="mb-4 text-blue-600"></p>
+                        <form method="POST" action="{% url 'submit_quiz' attempt.id %}">
+                            {% csrf_token %}
+                            {% for question in quiz.questions.all %}
+                            <div x-show="currentQuestion === {{ forloop.counter0 }}" class="bg-white rounded-lg shadow-sm p-8">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-6">{{ question.question_text }}</h3>
+                                <div class="space-y-4">
+                                    {% for option in question.options %}
+                                    <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                                           :class="{ 'border-green-500 bg-green-50': answers[{{ question.id }}] === '{{ option }}' }">
+                                        <input type="radio"
+                                               name="question_{{ question.id }}"
+                                               value="{{ option }}"
+                                               class="hidden"
+                                               x-model="answers[{{ question.id }}]">
+                                        <div class="w-6 h-6 flex items-center justify-center rounded-full border mr-3"
+                                             :class="{ 'border-green-500 bg-green-100': answers[{{ question.id }}] === '{{ option }}' }">
+                                        </div>
+                                        <span class="text-gray-800">{{ option }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                                <!-- Navigation -->
+                                <div class="mt-8 flex justify-between">
+                                    <button type="button"
+                                            x-show="currentQuestion > 0"
+                                            @click="currentQuestion--"
+                                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                                        <i class="fas fa-arrow-left mr-2"></i>
+                                        Previous
+                                    </button>
+                                    <div class="flex space-x-3">
+                                        <button type="button"
+                                                x-show="currentQuestion < {{ quiz.questions.count }} - 1"
+                                                @click="currentQuestion++"
+                                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                            Next
+                                            <i class="fas fa-arrow-right ml-2"></i>
+                                        </button>
+                                        <button type="submit"
+                                                x-show="currentQuestion === {{ quiz.questions.count }} - 1"
+                                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                            Submit Quiz
+                                            <i class="fas fa-check ml-2"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            <!-- Hidden inputs for all answers -->
+                            <template x-for="qid in Object.keys(answers)" :key="qid">
+                                <input type="hidden" :name="'question_' + qid" :value="answers[qid]">
+                            </template>
+                        </form>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        // Timer functionality
+        setInterval(() => {
+            if (this.timeRemaining > 0 && this.timerActive) {
+                this.timeRemaining--;
+            } else if (this.timeRemaining === 0) {
+                document.querySelector('form').submit();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

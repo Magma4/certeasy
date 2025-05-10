@@ -6,5 +6,5 @@ from .models import Certification
 
 @admin.register(Certification)
 class CertificationAdmin(admin.ModelAdmin):
-    list_display = ('title', 'description', 'category')
+    list_display = ('title', 'description', 'category', 'progress', 'students', 'image')
     list_filter = ('title',)

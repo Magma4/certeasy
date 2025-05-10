@@ -1,0 +1,80 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Study Plan</h1>
+        <a href="{% url 'study_plans:create' %}"
+           class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Create New Plan
+        </a>
+    </div>
+
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for date, plans in study_plans_by_date.items %}
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                {{ date|date:"F j, Y" }}
+            </h2>
+
+            <div class="space-y-4">
+                {% for plan in plans %}
+                <div class="border rounded-lg p-4 {% if plan.status == 'completed' %}bg-green-50{% elif plan.status == 'in_progress' %}bg-blue-50{% endif %}">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-medium text-gray-900">{{ plan.title }}</h3>
+                        <span class="text-sm px-2 py-1 rounded-full
+                            {% if plan.status == 'completed' %}bg-green-100 text-green-800
+                            {% elif plan.status == 'in_progress' %}bg-blue-100 text-blue-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ plan.get_status_display }}
+                        </span>
+                    </div>
+
+                    <div class="text-sm text-gray-600 mb-2">
+                        <p>Time: {{ plan.scheduled_time }}</p>
+                        <p>Duration: {{ plan.get_duration_display }}</p>
+                        <p>Type: {{ plan.get_activity_type_display }}</p>
+                    </div>
+
+                    {% if plan.notes %}
+                    <p class="text-sm text-gray-600 mb-3">{{ plan.notes }}</p>
+                    {% endif %}
+
+                    <div class="flex justify-end space-x-2">
+                        <a href="{% url 'study_plans:update' plan.id %}"
+                           class="text-blue-600 hover:text-blue-800 text-sm">
+                            Edit
+                        </a>
+                        <a href="{% url 'study_plans:delete' plan.id %}"
+                           class="text-red-600 hover:text-red-800 text-sm"
+                           onclick="return confirm('Are you sure you want to delete this study plan?')">
+                            Delete
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-12">
+            <p class="text-gray-600">No study plans created yet.</p>
+            <a href="{% url 'study_plans:create' %}"
+               class="mt-4 inline-block text-blue-600 hover:text-blue-800">
+                Create your first study plan
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{
+    sidebarOpen: false,
+    profileOpen: false,
+    notifyOpen: false,
+    newPostOpen: false,
+    sortBy: 'recent',
+    filterCert: 'all',
+    notifications: {{ notifications|safe }},
+}" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Discussions - CertEasy</title>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<style>
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out forwards;
+  }
+
+  .animate-delay-1 {
+    animation-delay: 0.2s;
+  }
+
+  .animate-delay-2 {
+    animation-delay: 0.4s;
+  }
+
+  .animate-delay-3 {
+    animation-delay: 0.6s;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .sidebar-link {
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+  }
+
+  .sidebar-link:hover {
+    border-left: 3px solid #10B981;
+  }
+
+  .sidebar-link-active {
+    border-left: 3px solid #10B981;
+    background-color: rgba(16, 185, 129, 0.1);
+  }
+
+  .post-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+  }
+
+  .post-card:hover {
+    border-left: 4px solid #10B981;
+    transform: translateX(2px);
+  }
+
+  .comment-form {
+    transition: all 0.3s ease;
+  }
+
+  .comment-form:focus-within {
+    border-color: #10B981;
+  }
+
+  .notification-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444;
+    border-radius: 50%;
+  }
+</style>
+
+<body class="h-screen overflow-hidden font-sans">
+
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed z-30 inset-y-0 left-0 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
+      <div class="flex flex-col justify-between h-full">
+        <div>
+          <div class="flex items-center space-x-2 px-6 py-5 border-b border-gray-700">
+            <div class="bg-white p-1 rounded-md">
+              <img src="/static/uploads/ce.png" alt="Logo" class="h-8">
+            </div>
+            <span class="font-bold text-white text-lg">CertEasy</span>
+          </div>
+          <nav class="mt-6 flex flex-col space-y-1 px-3 text-sm">
+            <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-chart-line mr-3 text-green-300"></i> Overview
+            </a>
+            <a href="{% url 'mycertifications' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-graduation-cap mr-3 text-green-300"></i> My Certifications
+            </a>
+            <a href="{% url 'resources' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-book mr-3 text-green-300"></i> Resources
+            </a>
+            <a href="{% url 'flashcards' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-brain mr-3 text-green-300"></i> Flashcards
+            </a>
+            <a href="{% url 'quizzes' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-clipboard-check mr-3 text-green-300"></i> Quizzes
+            </a>
+            <a href="/discussions/" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active text-white font-medium">
+              <i class="fas fa-comments mr-3 text-green-300"></i> Community
+            </a>
+            <a href="/settings/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-cog mr-3 text-green-300"></i> Settings
+            </a>
+            <a href="/support/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-life-ring mr-3 text-green-300"></i> Support
+            </a>
+          </nav>
+        </div>
+
+        <div class="p-4 m-4 bg-gray-800 rounded-lg">
+          <div class="flex items-center mb-3">
+            <i class="fas fa-rocket text-green-300 mr-2"></i>
+            <h4 class="font-medium text-white">Pro Upgrade</h4>
+          </div>
+          <p class="text-xs text-gray-300 mb-3">Get unlimited access to all certification materials</p>
+          <button class="w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
+            Upgrade Now
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Overlay on small screens -->
+    <div x-show="sidebarOpen" class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" @click="sidebarOpen = false"></div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50">
+
+      <!-- Top bar -->
+      <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+        <div class="flex items-center space-x-4 lg:hidden">
+          <button @click="sidebarOpen = !sidebarOpen" class="text-gray-700 focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <span class="font-semibold text-lg">Community Discussions</span>
+        </div>
+
+        <div class="hidden lg:block">
+          <div class="relative">
+            <input type="text" placeholder="Search discussions..." class="w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+          </div>
+        </div>
+
+        <div class="flex-1 flex justify-end items-center space-x-4">
+          <a href="/calendar/" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
+            <i class="fas fa-calendar-alt"></i>
+          </a>
+
+          <div class="relative" x-data="{ open: false }">
+            <button @click="notifyOpen = !notifyOpen" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
+              <i class="fas fa-bell"></i>
+              <span x-show="notifications.length > 0" class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-pink-500 rounded-full" x-text="notifications.length"></span>
+            </button>
+            <div x-show="notifyOpen" @click.away="notifyOpen = false" x-transition class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-100">
+              <div class="p-4 border-b font-semibold text-gray-700 flex justify-between items-center">
+                <span>Notifications</span>
+                <span class="text-xs text-green-600 cursor-pointer hover:underline">Mark all as read</span>
+              </div>
+              <ul class="text-sm text-gray-600 max-h-72 overflow-y-auto">
+                <template x-for="notification in notifications" :key="notification.id">
+                  <li class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer notification-item" :data-id="notification.id">
+                    <div class="flex items-start">
+                      <div :class="notification.type === 'comment' ? 'bg-blue-100' : 'bg-green-100'" class="rounded-full p-2 mr-3">
+                        <i :class="'fas fa-' + notification.icon + ' ' + (notification.type === 'comment' ? 'text-blue-600' : 'text-green-600') + ' text-sm'"></i>
+                      </div>
+                      <div>
+                        <p class="font-medium" x-text="notification.title"></p>
+                        <p class="text-xs text-gray-500 mt-1" x-text="notification.time"></p>
+                      </div>
+                    </div>
+                  </li>
+                </template>
+              </ul>
+              <div class="p-3 text-center border-t border-gray-100">
+                <a href="/notifications" class="text-sm text-green-600 hover:underline">View all notifications</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
+              <div class="relative">
+                <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=10B981&color=fff" class="w-9 h-9 rounded-full border-2 border-green-100" alt="User avatar">
+                <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+              </div>
+              <span class="text-sm font-medium text-gray-700 hidden md:inline">{{ user.get_full_name|default:user.username|title }}</span>
+              <i class="fas fa-chevron-down text-xs text-gray-500 hidden md:inline"></i>
+            </button>
+            <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100">
+              <div class="px-4 py-3 border-b border-gray-100">
+                <p class="text-sm font-semibold">{{ user.get_full_name|default:user.username|title }}</p>
+                <p class="text-xs text-gray-500">{{ user.email }}</p>
+              </div>
+              <a href="/profile/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <i class="fas fa-user mr-3 text-gray-400 w-5"></i>
+                Profile
+              </a>
+              <a href="/settings/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <i class="fas fa-cog mr-3 text-gray-400 w-5"></i>
+                Settings
+              </a>
+              <a href="/help/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <i class="fas fa-question-circle mr-3 text-gray-400 w-5"></i>
+                Help Center
+              </a>
+              <div class="border-t border-gray-100 mt-2"></div>
+              <a href="/account_logout/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <i class="fas fa-sign-out-alt mr-3 text-gray-400 w-5"></i>
+                Logout
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <!-- Header Section with Create Post Button -->
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800">Community Discussions</h1>
+            <p class="text-gray-600 text-sm mt-1">Connect with other certification candidates and share your knowledge</p>
+          </div>
+          <button @click="newPostOpen = true" class="px-4 py-2 bg-green-600 text-white text-sm rounded-md font-medium hover:bg-green-700 transition-colors flex items-center">
+            <i class="fas fa-plus-circle mr-2"></i> Create Post
+          </button>
+        </div>
+
+        <!-- Filter and Sort Section -->
+        <div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+          <div class="flex flex-wrap gap-2">
+            <span class="text-sm font-medium text-gray-700 mr-2">Filter by:</span>
+            <button @click="filterCert = 'all'" :class="filterCert === 'all' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-white text-gray-700 border-gray-200'" class="px-3 py-1 text-xs font-medium rounded-md border transition-colors">
+              All Topics
+            </button>
+            {% for cert in certifications %}
+            <button @click="filterCert = '{{ cert.id }}'" :class="filterCert === '{{ cert.id }}' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-white text-gray-700 border-gray-200'" class="px-3 py-1 text-xs font-medium rounded-md border transition-colors">
+              {{ cert.title }}
+            </button>
+            {% endfor %}
+          </div>
+          <div class="flex items-center space-x-4">
+            <span class="text-sm font-medium text-gray-700">Sort by:</span>
+            <select x-model="sortBy" class="text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+              <option value="recent">Most Recent</option>
+              <option value="popular">Most Popular</option>
+              <option value="comments">Most Comments</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Discussion List -->
+        <div class="space-y-4">
+          {% for post in posts %}
+          <div class="bg-white rounded-lg shadow-sm border border-gray-100 post-card animate-fade-in-up hover:shadow-md overflow-hidden" :class="{'hidden': filterCert !== 'all' && filterCert !== '{{ post.certification.id }}'}">
+            <div class="p-5">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center">
+                  <img src="https://ui-avatars.com/api/?name={{ post.user.get_full_name|default:post.user.username }}&background=10B981&color=fff" class="w-10 h-10 rounded-full mr-4" alt="{{ post.user.username }}">
+                  <div>
+                    <h3 class="text-lg font-semibold text-gray-800">{{ post.title }}</h3>
+                    <div class="flex items-center space-x-2 mt-1">
+                      <span class="text-sm text-gray-600">{{ post.user.get_full_name|default:post.user.username }}</span>
+                      <span class="text-gray-400">•</span>
+                      <span class="text-xs text-gray-500">{{ post.created_at|timesince }} ago</span>
+                      <span class="text-gray-400">•</span>
+                      <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">{{ post.certification.title }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex space-x-2">
+                  {% if user == post.user %}
+                    <button class="text-gray-400 hover:text-blue-600 edit-post-btn" data-post-id="{{ post.id }}">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="text-gray-400 hover:text-red-600 delete-post-btn" data-post-id="{{ post.id }}">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  {% endif %}
+                  <button class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-ellipsis-v"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="mt-4 text-gray-600 text-sm line-clamp-3">
+                {{ post.body|truncatewords:50 }}
+              </div>
+
+              <div class="mt-4 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                  <button class="flex items-center space-x-1 text-gray-500 hover:text-green-600 like-btn" data-post-id="{{ post.id }}">
+                    <i class="far fa-thumbs-up {% if post.id in liked_posts %}text-green-600{% endif %}"></i>
+                    <span class="text-xs like-count">{{ post.likes.count }}</span>
+                  </button>
+                  <button class="flex items-center space-x-1 text-gray-500 hover:text-blue-600 comment-btn" data-post-id="{{ post.id }}">
+                    <i class="far fa-comment"></i>
+                    <span class="text-xs">{{ post.comments.count }}</span>
+                  </button>
+                  <button class="flex items-center space-x-1 text-gray-500 hover:text-purple-600">
+                    <i class="far fa-share-square"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comment section: hidden by default -->
+          <div class="mt-2 comment-section" id="comment-section-{{ post.id }}" style="display:none;">
+            <div id="comments-{{ post.id }}">
+              {% for comment in post.comments.all %}
+                {% include 'partials/comment.html' with comment=comment %}
+              {% endfor %}
+            </div>
+            <div id="comment-form-{{ post.id }}">
+              <form class="comment-form" data-post-id="{{ post.id }}">
+                <textarea name="body" rows="2" class="w-full px-3 py-2 border rounded mb-2" placeholder="Add a comment..." required></textarea>
+                <div class="flex justify-end">
+                  <button type="submit" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">Post Comment</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          {% empty %}
+          <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-10 text-center">
+            <div class="text-gray-400 mb-4">
+              <i class="fas fa-comments text-5xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 mb-2">No discussions yet</h3>
+            <p class="text-gray-500 text-sm mb-4">Be the first to start a discussion in this community!</p>
+            <button @click="newPostOpen = true" class="px-4 py-2 bg-green-600 text-white text-sm rounded-md font-medium hover:bg-green-700 transition-colors">
+              Create a Post
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Pagination controls -->
+        <div class="mt-8 flex justify-center">
+          <nav class="flex items-center space-x-1">
+            {% if posts.has_previous %}
+              <a href="?page={{ posts.previous_page_number }}" class="px-3 py-1 rounded-md text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-50">
+                <i class="fas fa-chevron-left text-xs"></i>
+              </a>
+            {% endif %}
+            {% for num in posts.paginator.page_range %}
+              {% if posts.number == num %}
+                <a href="?page={{ num }}" class="px-3 py-1 rounded-md text-sm font-medium text-white bg-green-600 border border-green-600">{{ num }}</a>
+              {% else %}
+                <a href="?page={{ num }}" class="px-3 py-1 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">{{ num }}</a>
+              {% endif %}
+            {% endfor %}
+            {% if posts.has_next %}
+              <a href="?page={{ posts.next_page_number }}" class="px-3 py-1 rounded-md text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-50">
+                <i class="fas fa-chevron-right text-xs"></i>
+              </a>
+            {% endif %}
+          </nav>
+        </div>
+      </main>
+
+      <!-- Enhanced Create New Post Modal -->
+      <div x-show="newPostOpen" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black bg-opacity-40" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-auto animate-fade-in-up">
+          <div class="bg-gradient-to-r from-green-500 to-green-400 rounded-t-2xl px-6 py-4 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-white">Create a New Post</h2>
+            <button @click="newPostOpen = false" class="text-white hover:text-green-100 text-xl focus:outline-none">&times;</button>
+          </div>
+          <form id="create-post-form" class="px-8 py-6">
+            <div class="mb-5">
+              <label for="title" class="block text-sm font-semibold text-gray-700 mb-1">Title</label>
+              <input type="text" name="title" id="title" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-400 transition" placeholder="What's your question or topic?">
+            </div>
+            <div class="mb-5">
+              <label for="certification" class="block text-sm font-semibold text-gray-700 mb-1">Certification</label>
+              <select name="certification" id="certification" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-400 transition">
+                {% for cert in certifications %}
+                  <option value="{{ cert.id }}">{{ cert.title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-6">
+              <label for="body" class="block text-sm font-semibold text-gray-700 mb-1">Content</label>
+              <textarea name="body" id="body" rows="4" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-400 transition resize-none" placeholder="Describe your question, share details, or start a discussion..."></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+              <button type="button" @click="newPostOpen = false" class="px-5 py-2 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition">Cancel</button>
+              <button type="submit" class="px-5 py-2 rounded-lg bg-green-500 text-white font-semibold shadow hover:bg-green-600 transition">Post</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Post Detail Template (To be used on a separate page) -->
+      {% comment %}
+      <div class="max-w-4xl mx-auto">
+        <!-- Post Header -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center">
+              <img src="https://ui-avatars.com/api/?name={{ post.user.get_full_name|default:post.user.username }}&background=10B981&color=fff" class="w-12 h-12 rounded-full mr-4" alt="{{ post.user.username }}">
+              <div>
+                <h1 class="text-xl font-bold text-gray-800">{{ post.title }}</h1>
+                <div class="flex items-center space-x-2 mt-1">
+                  <span class="text-sm font-medium text-gray-600">{{ post.user.get_full_name|default:post.user.username }}</span>
+                  <span class="text-gray-400">•</span>
+                  <span class="text-xs text-gray-500">{{ post.created_at|timesince }} ago</span>
+                  <span class="text-gray-400">•</span>
+                  <span class="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">{{ post.certification.title }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex space-x-2">
+              <button class="text-gray-400 hover:text-green-600">
+                <i class="fas fa-bookmark"></i>
+              </button>
+              <button class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-6 text-gray-700 space-y-4 post-content">
+            {{ post.body|linebreaks }}
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
+            <div class="flex items-center space-x-6">
+              <button class="flex items-center space-x-1 text-gray-500 hover:text-green-600">
+                <i class="far fa-thumbs-up"></i>
+                <span class="text-sm">23</span>
+              </button>
+              <button class="flex items-center space-x-1 text-gray-500 hover:text-blue-600">
+                <i class="far fa-comment"></i>
+                <span class="text-sm">{{ post.comments.count }}</span>
+              </button>
+              <button class="flex items-center space-x-1 text-gray-500 hover:text-purple-600">
+                <i class="far fa-share-square"></i>
+                <span class="text-sm">Share</span>
+              </button>
+            </div>
+            <div>
+              <span class="text-xs text-gray-500">Last updated {{ post.updated_at|timesince }} ago</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Comments ({{ post.comments.count }})</h3>
+
+          <!-- New Comment Form -->
+          <form action="{% url 'add_comment' post.id %}" method="post" class="mb-6 comment-form border border-gray-200 rounded-lg p-4">
+            {% csrf_token %}
+            <div class="flex items-start space-x-4">
+              <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=10B981&color=fff" class="w-10 h-10 rounded-full" alt="{{ user.username }}">
+              <div class="flex-1">
+                <textarea name="body" placeholder="Add a comment..." rows="3" class="w-full px-3 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
+                <div class="mt-2 flex justify-end">
+                  <button type="submit" class="px-4 py-2 bg-green-600 text-white text-sm rounded-md font-medium hover:bg-green-700 transition-colors">
+                    Comment
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <!-- Comments List -->
+          <div class="space-y-6">
+            {% for comment in post.comments.all %}
+            <div class="flex items-start space-x-4">
+              <img src="https://ui-avatars.com/api/?name={{ comment.user.get_full_name|default:comment.user.username }}&background=10B981&color=fff" class="w-10 h-10 rounded-full" alt="{{ comment.user.username }}">
+              <div class="flex-1 bg-gray-50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="font-medium text-gray-800">{{ comment.user.get_full_name|default:comment.user.username }}</span>
+                    <span class="text-xs text-gray-500">{{ comment.created_at|timesince }} ago</span>
+                  </div>
+                  <button class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-ellipsis-v"></i>
+                  </button>
+                </div>
+                <div class="text-gray-700 text-sm">
+                  {{ comment.body|linebreaks }}
+                </div>
+                <div class="mt-3 flex items-center space-x-4">
+                  <button class="text-xs text-gray-500 hover:text-green-600">
+                    <i class="far fa-thumbs-up mr-1"></i> Like
+                  </button>
+                  <button class="text-xs text-gray-500 hover:text-blue-600">
+                    <i class="far fa-comment mr-1"></i> Reply
+                  </button>
+                </div>
+
+                <!-- Replies -->
+                <div class="mt-4 pl-4 border-l-2 border-gray-200 space-y-4">
+                  {% for reply in comment.replies.all %}
+                  <div class="flex items-start space-x-3">
+                    <img src="https://ui-avatars.com/api/?name={{ reply.user.get_full_name|default:reply.user.username }}&background=10B981&color=fff" class="w-8 h-8 rounded-full" alt="{{ reply.user.username }}">
+                    <div class="flex-1 bg-white rounded-lg p-3">
+                      <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center space-x-2">
+                          <span class="font-medium text-gray-800 text-sm">{{ reply.user.get_full_name|default:reply.user.username }}</span>
+                          <span class="text-xs text-gray-500">{{ reply.created_at|timesince }} ago</span>
+                        </div>
+                      </div>
+                      <div class="text-gray-700 text-sm">
+                        {{ reply.body }}
+                      </div>
+                      <div class="mt-2 flex items-center space-x-4">
+                        <button class="text-xs text-gray-500 hover:text-green-600">
+                          <i class="far fa-thumbs-up mr-1"></i> Like
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-8">
+              <div class="text-gray-400 mb-2">
+                <i class="far fa-comment-alt text-4xl"></i>
+              </div>
+              <h4 class="text-gray-600 mb-1">No comments yet</h4>
+              <p class="text-gray-500 text-sm">Be the first to comment on this discussion!</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endcomment %}
+    </div>
+  </div>
+
+  <!-- Add this modal at the end of <body> -->
+  <div
+    x-data="{
+      show: false,
+      type: '',
+      confirm: null,
+      open(type, confirmFn) {
+        this.type = type;
+        this.confirm = confirmFn;
+        this.show = true;
+      }
+    }"
+    x-ref="deleteModal"
+    id="delete-modal-wrapper"
+    @show-delete-modal.window="open($event.detail.type, $event.detail.confirm)"
+  >
+    <div x-show="show" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
+      <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-sm text-center animate-fade-in-up">
+        <h2 class="text-xl font-bold mb-4 text-gray-800">Confirm Deletion</h2>
+        <p class="mb-6 text-gray-600">Are you sure you want to delete this <span x-text="type"></span>? This action cannot be undone.</p>
+        <div class="flex justify-center space-x-4">
+          <button @click="show = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Cancel</button>
+          <button @click="confirm(); show = false" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toaster Notification -->
+  <div x-data="{ show: false, message: '', type: 'success', showToast(msg, t = 'success') { this.message = msg; this.type = t; this.show = true; setTimeout(() => this.show = false, 2500); } }" x-ref="toaster" id="toaster-notification" class="fixed top-6 right-6 z-50">
+    <div x-show="show" x-transition class="flex items-center px-5 py-3 rounded-lg shadow-lg text-white"
+      :class="type === 'success' ? 'bg-green-600' : 'bg-red-600'" style="display: none;">
+      <i class="fas fa-check-circle mr-3 text-xl" x-show="type === 'success'"></i>
+      <i class="fas fa-exclamation-circle mr-3 text-xl" x-show="type === 'error'"></i>
+      <span x-text="message"></span>
+    </div>
+  </div>
+
+  <script>
+    // Handle notification read
+    document.addEventListener('DOMContentLoaded', function() {
+      const notificationItems = document.querySelectorAll('.notification-item');
+      notificationItems.forEach(item => {
+        item.addEventListener('click', function() {
+          // In a real app, you would mark the notification as read here
+          // and then redirect to the relevant page
+          const notificationId = this.getAttribute('data-id');
+          // Example: window.location.href = '/notifications/' + notificationId;
+        });
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Event delegation for like and comment buttons
+      document.body.addEventListener('click', function(e) {
+        // Like button AJAX
+        if (e.target.closest('.like-btn')) {
+          var btn = e.target.closest('.like-btn');
+          var postId = btn.getAttribute('data-post-id');
+          fetch('/discussions/like/' + postId + '/', {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}',
+            },
+            credentials: 'same-origin'
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.liked) {
+              btn.querySelector('i').classList.add('text-green-600');
+            } else {
+              btn.querySelector('i').classList.remove('text-green-600');
+            }
+            btn.querySelector('.like-count').textContent = data.like_count;
+          });
+        }
+        // Comment button toggles form
+        if (e.target.closest('.comment-btn')) {
+          var btn = e.target.closest('.comment-btn');
+          var postId = btn.getAttribute('data-post-id');
+          var section = document.getElementById('comment-section-' + postId);
+          if (section.style.display === 'none') {
+            section.style.display = '';
+            section.querySelector('textarea').focus();
+          } else {
+            section.style.display = 'none';
+          }
+        }
+        // Delete post (show modal)
+        if (e.target.closest('.delete-post-btn')) {
+          var btn = e.target.closest('.delete-post-btn');
+          var postId = btn.getAttribute('data-post-id');
+          var confirmFn = function() {
+            fetch('/discussions/post/' + postId + '/delete/', {
+              method: 'POST',
+              headers: {'X-CSRFToken': '{{ csrf_token }}'},
+              credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                btn.closest('.post-card').remove();
+                showToast('Post deleted successfully!');
+              }
+            });
+          };
+          window.dispatchEvent(new CustomEvent('show-delete-modal', {
+            detail: { type: 'post', confirm: confirmFn }
+          }));
+          return;
+        }
+        // Edit post
+        if (e.target.closest('.edit-post-btn')) {
+          var btn = e.target.closest('.edit-post-btn');
+          var postId = btn.getAttribute('data-post-id');
+          var card = btn.closest('.post-card');
+          var titleElem = card.querySelector('h3');
+          var bodyElem = card.querySelector('.line-clamp-3');
+          var origTitle = titleElem.textContent.trim();
+          var origBody = bodyElem.textContent.trim();
+          // Show inline form
+          titleElem.innerHTML = '<input type="text" class="w-full border rounded px-2 py-1" value="' + origTitle.replace(/"/g, '&quot;') + '">';
+          bodyElem.innerHTML = '<textarea class="w-full border rounded px-2 py-1">' + origBody + '</textarea>';
+          if (!card.querySelector('.save-post-btn')) {
+            var saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Save';
+            saveBtn.className = 'save-post-btn px-2 py-1 bg-green-500 text-white rounded ml-2';
+            saveBtn.type = 'button';
+            saveBtn.onclick = function() {
+              var newTitle = titleElem.querySelector('input').value;
+              var newBody = bodyElem.querySelector('textarea').value;
+              fetch('/discussions/post/' + postId + '/update/', {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                credentials: 'same-origin',
+                body: new URLSearchParams({title: newTitle, body: newBody})
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  titleElem.textContent = data.title;
+                  bodyElem.textContent = data.body;
+                  saveBtn.remove();
+                  showToast('Post updated successfully!');
+                }
+              });
+            };
+            card.querySelector('.flex.items-center.space-x-4').appendChild(saveBtn);
+          }
+        }
+        // Delete comment (show modal)
+        if (e.target.closest('.delete-comment-btn')) {
+          var btn = e.target.closest('.delete-comment-btn');
+          var commentId = btn.getAttribute('data-comment-id');
+          var confirmFn = function() {
+            fetch('/discussions/comment/' + commentId + '/delete/', {
+              method: 'POST',
+              headers: {'X-CSRFToken': '{{ csrf_token }}'},
+              credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                btn.closest('.flex.items-start').remove();
+                showToast('Comment deleted successfully!');
+              }
+            });
+          };
+          window.dispatchEvent(new CustomEvent('show-delete-modal', {
+            detail: { type: 'comment', confirm: confirmFn }
+          }));
+          return;
+        }
+        // Edit comment
+        if (e.target.closest('.edit-comment-btn')) {
+          var btn = e.target.closest('.edit-comment-btn');
+          var commentId = btn.getAttribute('data-comment-id');
+          var commentDiv = btn.closest('.flex.items-start');
+          var bodyElem = commentDiv.querySelector('.text-gray-700');
+          var origBody = bodyElem.textContent.trim();
+          // Show inline form
+          bodyElem.innerHTML = '<textarea class="w-full border rounded px-2 py-1">' + origBody + '</textarea>';
+          if (!commentDiv.querySelector('.save-comment-btn')) {
+            var saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Save';
+            saveBtn.className = 'save-comment-btn px-2 py-1 bg-green-500 text-white rounded ml-2';
+            saveBtn.type = 'button';
+            saveBtn.onclick = function() {
+              var newBody = bodyElem.querySelector('textarea').value;
+              fetch('/discussions/comment/' + commentId + '/update/', {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                credentials: 'same-origin',
+                body: new URLSearchParams({body: newBody})
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  bodyElem.textContent = data.body;
+                  saveBtn.remove();
+                  showToast('Comment updated successfully!');
+                }
+              });
+            };
+            commentDiv.querySelector('.flex.items-center').appendChild(saveBtn);
+          }
+        }
+      });
+
+      // AJAX comment submission
+      document.querySelectorAll('.comment-form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var postId = this.getAttribute('data-post-id');
+          var textarea = this.querySelector('textarea');
+          var body = textarea.value;
+          var commentsDiv = document.getElementById('comments-' + postId);
+          fetch('/discussions/comment/' + postId + '/', {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}',
+            },
+            credentials: 'same-origin',
+            body: new URLSearchParams({body: body})
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              commentsDiv.insertAdjacentHTML('beforeend', data.html);
+              textarea.value = '';
+              showToast('Comment posted successfully!');
+            }
+          });
+        });
+      });
+    });
+
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('deleteModal', () => ({
+        show: false,
+        type: '',
+        confirm: null,
+      }));
+    });
+
+    // Global function to show toast
+    function showToast(msg, type = 'success') {
+      const toaster = document.querySelector('#toaster-notification');
+      if (toaster && toaster.__x) {
+        toaster.__x.$data.showToast(msg, type);
+      } else {
+        console.error('Toaster component not found or not initialized');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Handle create post form submission
+      const createPostForm = document.getElementById('create-post-form');
+      if (createPostForm) {
+        createPostForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+
+          fetch('{% url "create_post" %}', {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData,
+            credentials: 'same-origin'
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showToast(data.message);
+              // Close modal using Alpine.js
+              const modal = document.querySelector('[x-data]');
+              if (modal && modal.__x) {
+                modal.__x.$data.newPostOpen = false;
+              }
+              // Reload the page to show the new post
+              window.location.reload();
+            }
+          })
+          .catch(error => {
+            showToast('Error creating post. Please try again.', 'error');
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>
