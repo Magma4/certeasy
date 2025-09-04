@@ -1,9 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from certifications.models import Certification
 from quizzes.models import Quiz
 from resources.models import Resource
-from flashcards.models import FlashcardSet
+from flashcards.models import Flashcard
 
 class StudyPlan(models.Model):
     ACTIVITY_TYPES = [
@@ -20,7 +20,7 @@ class StudyPlan(models.Model):
         ('cancelled', 'Cancelled'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='study_plans')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='study_plans')
     certification = models.ForeignKey(Certification, on_delete=models.CASCADE, related_name='study_plans')
     title = models.CharField(max_length=200)
     activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
@@ -32,7 +32,7 @@ class StudyPlan(models.Model):
     # Optional related content
     quiz = models.ForeignKey(Quiz, on_delete=models.SET_NULL, null=True, blank=True)
     resource = models.ForeignKey(Resource, on_delete=models.SET_NULL, null=True, blank=True)
-    flashcard_set = models.ForeignKey(FlashcardSet, on_delete=models.SET_NULL, null=True, blank=True)
+    flashcard_set = models.ForeignKey(Flashcard, on_delete=models.SET_NULL, null=True, blank=True)
 
     # For exam scheduling
     exam_date = models.DateField(null=True, blank=True)

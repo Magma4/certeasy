@@ -187,29 +187,23 @@
             <span class="font-bold text-white text-lg">CertEasy</span>
           </div>
           <nav class="mt-6 flex flex-col space-y-1 px-3 text-sm">
-            <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active text-white font-medium">
+            <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded text-white font-medium">
               <i class="fas fa-chart-line mr-3 text-green-300"></i> Overview
             </a>
             <a href="{% url 'mycertifications' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-graduation-cap mr-3 text-green-300"></i> My Certifications
             </a>
-            <a href="{% url 'resources' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+            <a href="{% url 'resources' %}" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active hover:bg-gray-800/50">
               <i class="fas fa-book mr-3 text-green-300"></i> Resources
             </a>
-            <a href="/flashcards/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+            <a href="{% url 'flashcards' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-brain mr-3 text-green-300"></i> Flashcards
             </a>
-            <a href="/quizzes/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+            <a href="{% url 'quizzes' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-clipboard-check mr-3 text-green-300"></i> Quizzes
             </a>
-            <a href="/discussions/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+            <a href="{% url 'discussions' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-comments mr-3 text-green-300"></i> Community
-            </a>
-            <a href="/settings/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
-              <i class="fas fa-cog mr-3 text-green-300"></i> Settings
-            </a>
-            <a href="/support/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
-              <i class="fas fa-life-ring mr-3 text-green-300"></i> Support
             </a>
           </nav>
         </div>
@@ -245,96 +239,34 @@
         </div>
 
         <div class="hidden lg:block">
-          <div class="relative">
-            <input type="text" placeholder="Search PDFs, videos, images..." class="w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500">
-            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-          </div>
+          <span class="text-2xl font-bold text-gray-800 tracking-tight">Resources</span>
         </div>
 
-        <div class="flex-1 flex justify-end items-center space-x-4">
-          <a href="#" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
-            <i class="fas fa-calendar-alt"></i>
-          </a>
+          <div class="flex-1 flex justify-end items-center space-x-4">
 
-          <div class="relative" x-data="{ open: false }">
-            <button @click="notifyOpen = !notifyOpen" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
-              <i class="fas fa-bell"></i>
-              <span class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-pink-500 rounded-full">3</span>
-            </button>
-            <div x-show="notifyOpen" @click.away="notifyOpen = false" x-transition class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-100">
-              <div class="p-4 border-b font-semibold text-gray-700 flex justify-between items-center">
-                <span>Notifications</span>
-                <span class="text-xs text-green-600 cursor-pointer hover:underline">Mark all as read</span>
-              </div>
-              <ul class="text-sm text-gray-600 max-h-72 overflow-y-auto">
-                <li class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
-                  <div class="flex items-start">
-                    <div class="bg-green-100 rounded-full p-2 mr-3">
-                      <i class="fas fa-file-pdf text-green-600 text-sm"></i>
-                    </div>
-                    <div>
-                      <p class="font-medium">New GRE study guide available</p>
-                      <p class="text-xs text-gray-500 mt-1">2 hours ago</p>
-                    </div>
-                  </div>
-                </li>
-                <li class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
-                  <div class="flex items-start">
-                    <div class="bg-blue-100 rounded-full p-2 mr-3">
-                      <i class="fas fa-video text-blue-600 text-sm"></i>
-                    </div>
-                    <div>
-                      <p class="font-medium">CFA quantitative methods video added</p>
-                      <p class="text-xs text-gray-500 mt-1">Yesterday</p>
-                    </div>
-                  </div>
-                </li>
-                <li class="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                  <div class="flex items-start">
-                    <div class="bg-purple-100 rounded-full p-2 mr-3">
-                      <i class="fas fa-image text-purple-600 text-sm"></i>
-                    </div>
-                    <div>
-                      <p class="font-medium">LSAT diagrams collection uploaded</p>
-                      <p class="text-xs text-gray-500 mt-1">2 days ago</p>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-              <div class="p-3 text-center border-t border-gray-100">
-                <a href="#" class="text-sm text-green-600 hover:underline">View all notifications</a>
-              </div>
-            </div>
-          </div>
+
+          <div id="notification-dropdown-container"></div>
 
           <div class="relative" x-data="{ open: false }">
             <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
               <div class="relative">
-                <img src="https://ui-avatars.com/api/?name=User&background=10B981&color=fff" class="w-9 h-9 rounded-full border-2 border-green-100" alt="User avatar">
+                <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=10B981&color=fff" class="w-9 h-9 rounded-full border-2 border-green-100" alt="User avatar">
                 <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
               </div>
-              <span class="text-sm font-medium text-gray-700 hidden md:inline">Learner</span>
+              <span class="text-sm font-medium text-gray-700 hidden md:inline">{{ user.get_full_name|default:user.username|title }}</span>
               <i class="fas fa-chevron-down text-xs text-gray-500 hidden md:inline"></i>
             </button>
             <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100">
               <div class="px-4 py-3 border-b border-gray-100">
-                <p class="text-sm font-semibold">Learner</p>
-                <p class="text-xs text-gray-500">learner@example.com</p>
+                <p class="text-sm font-semibold">{{ user.get_full_name|default:user.username|title }}</p>
+                <p class="text-xs text-gray-500">{{ user.email }}</p>
               </div>
-              <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+              <a href="/profile/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                 <i class="fas fa-user mr-3 text-gray-400 w-5"></i>
                 Profile
               </a>
-              <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <i class="fas fa-cog mr-3 text-gray-400 w-5"></i>
-                Settings
-              </a>
-              <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <i class="fas fa-question-circle mr-3 text-gray-400 w-5"></i>
-                Help Center
-              </a>
               <div class="border-t border-gray-100 mt-2"></div>
-              <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+              <a href="{% url 'account_logout' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                 <i class="fas fa-sign-out-alt mr-3 text-gray-400 w-5"></i>
                 Logout
               </a>
@@ -481,19 +413,36 @@
         </div>
 
       </main>
+      <footer class="bg-white border-t border-gray-200 py-4 px-6 text-center text-sm text-gray-500">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-2 md:mb-0">
+                        <span>© 2025 CertEasy. All rights reserved.</span>
+                    </div>
+                    <div class="flex space-x-4">
+                        <a href="/terms/" class="hover:text-green-600">Terms</a>
+                        <a href="/privacy/" class="hover:text-green-600">Privacy</a>
+                        <a href="/help/" class="hover:text-green-600">Help</a>
+                        <a href="/contact/" class="hover:text-green-600">Contact</a>
+                    </div>
+                </div>
+            </footer>
 
     </div>
   </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Function to toggle resource bookmark status
-      const bookmarkButtons = document.querySelectorAll('.fa-bookmark');
-      bookmarkButtons.forEach(button => {
-        button.addEventListener('click', function() {
+      document.querySelectorAll('.star-icon').forEach(function(star) {
+        star.addEventListener('click', function() {
           this.classList.toggle('text-yellow-500');
         });
       });
+
+      fetch('/notification-dropdown/')
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById('notification-dropdown-container').innerHTML = html;
+        });
     });
 
     function markWatched(resourceId) {

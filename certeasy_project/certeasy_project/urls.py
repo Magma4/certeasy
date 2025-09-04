@@ -29,6 +29,7 @@ urlpatterns = [
     path('mycertifications', mycertifications, name='mycertifications'),
     path('resources', resources, name='resources'),
     path('flashcards', flashcards, name='flashcards'),
+    # path('flashcards/create/', create_flashcard, name='create_flashcard'),
     path('quizzes', quizzes, name='quizzes'),
     path('forgot-password/', forgot_password_page, name='forgot_password'),
     path('reset-password/<str:uidb64>/<str:token>/', reset_confirm_page, name='reset_confirm'),
@@ -60,6 +61,9 @@ urlpatterns = [
     path('discussions/post/<int:post_id>/update/', update_post, name='update_post'),
     path('discussions/comment/<int:comment_id>/delete/', delete_comment, name='delete_comment'),
     path('discussions/comment/<int:comment_id>/update/', update_comment, name='update_comment'),
+    path('create-study-plan/', create_study_plan, name='create_study_plan'),
+    path('certification/<int:cert_id>/', certification_view, name='certification_view'),
+    path('notification-dropdown/', notification_dropdown_view, name='notification_dropdown'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

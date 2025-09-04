@@ -99,6 +99,16 @@
 
 <body class="h-screen overflow-hidden font-sans">
 
+  <!-- Toaster Notification (must be a direct child of body) -->
+  <div x-data="toaster" x-ref="toaster" id="toaster-notification" class="fixed top-6 right-6 z-50">
+    <div x-show="show" x-transition class="flex items-center px-5 py-3 rounded-lg shadow-lg text-white"
+      :class="type === 'success' ? 'bg-green-600' : 'bg-red-600'" style="display: none;">
+      <i class="fas fa-check-circle mr-3 text-xl" x-show="type === 'success'"></i>
+      <i class="fas fa-exclamation-circle mr-3 text-xl" x-show="type === 'error'"></i>
+      <span x-text="message"></span>
+    </div>
+  </div>
+
   <div class="flex h-full">
     <!-- Sidebar -->
     <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed z-30 inset-y-0 left-0 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
@@ -111,7 +121,7 @@
             <span class="font-bold text-white text-lg">CertEasy</span>
           </div>
           <nav class="mt-6 flex flex-col space-y-1 px-3 text-sm">
-            <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+            <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded text-white font-medium">
               <i class="fas fa-chart-line mr-3 text-green-300"></i> Overview
             </a>
             <a href="{% url 'mycertifications' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
@@ -126,14 +136,8 @@
             <a href="{% url 'quizzes' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-clipboard-check mr-3 text-green-300"></i> Quizzes
             </a>
-            <a href="/discussions/" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active text-white font-medium">
+            <a href="{% url 'discussions' %}" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active hover:bg-gray-800/50">
               <i class="fas fa-comments mr-3 text-green-300"></i> Community
-            </a>
-            <a href="/settings/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
-              <i class="fas fa-cog mr-3 text-green-300"></i> Settings
-            </a>
-            <a href="/support/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
-              <i class="fas fa-life-ring mr-3 text-green-300"></i> Support
             </a>
           </nav>
         </div>
@@ -155,7 +159,7 @@
     <div x-show="sidebarOpen" class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" @click="sidebarOpen = false"></div>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50">
+    <div class="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50">
 
       <!-- Top bar -->
       <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-20">
@@ -165,51 +169,15 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
           </button>
-          <span class="font-semibold text-lg">Community Discussions</span>
+          <span class="font-semibold text-lg">Community</span>
         </div>
 
         <div class="hidden lg:block">
-          <div class="relative">
-            <input type="text" placeholder="Search discussions..." class="w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500">
-            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-          </div>
+          <span class="text-2xl font-bold text-gray-800 tracking-tight">Community</span>
         </div>
 
         <div class="flex-1 flex justify-end items-center space-x-4">
-          <a href="/calendar/" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
-            <i class="fas fa-calendar-alt"></i>
-          </a>
-
-          <div class="relative" x-data="{ open: false }">
-            <button @click="notifyOpen = !notifyOpen" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
-              <i class="fas fa-bell"></i>
-              <span x-show="notifications.length > 0" class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-pink-500 rounded-full" x-text="notifications.length"></span>
-            </button>
-            <div x-show="notifyOpen" @click.away="notifyOpen = false" x-transition class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-100">
-              <div class="p-4 border-b font-semibold text-gray-700 flex justify-between items-center">
-                <span>Notifications</span>
-                <span class="text-xs text-green-600 cursor-pointer hover:underline">Mark all as read</span>
-              </div>
-              <ul class="text-sm text-gray-600 max-h-72 overflow-y-auto">
-                <template x-for="notification in notifications" :key="notification.id">
-                  <li class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer notification-item" :data-id="notification.id">
-                    <div class="flex items-start">
-                      <div :class="notification.type === 'comment' ? 'bg-blue-100' : 'bg-green-100'" class="rounded-full p-2 mr-3">
-                        <i :class="'fas fa-' + notification.icon + ' ' + (notification.type === 'comment' ? 'text-blue-600' : 'text-green-600') + ' text-sm'"></i>
-                      </div>
-                      <div>
-                        <p class="font-medium" x-text="notification.title"></p>
-                        <p class="text-xs text-gray-500 mt-1" x-text="notification.time"></p>
-                      </div>
-                    </div>
-                  </li>
-                </template>
-              </ul>
-              <div class="p-3 text-center border-t border-gray-100">
-                <a href="/notifications" class="text-sm text-green-600 hover:underline">View all notifications</a>
-              </div>
-            </div>
-          </div>
+          {% include 'partials/notification_dropdown.html' %}
 
           <div class="relative" x-data="{ open: false }">
             <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
@@ -229,16 +197,8 @@
                 <i class="fas fa-user mr-3 text-gray-400 w-5"></i>
                 Profile
               </a>
-              <a href="/settings/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <i class="fas fa-cog mr-3 text-gray-400 w-5"></i>
-                Settings
-              </a>
-              <a href="/help/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <i class="fas fa-question-circle mr-3 text-gray-400 w-5"></i>
-                Help Center
-              </a>
               <div class="border-t border-gray-100 mt-2"></div>
-              <a href="/account_logout/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+              <a href="{% url 'account_logout' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                 <i class="fas fa-sign-out-alt mr-3 text-gray-400 w-5"></i>
                 Logout
               </a>
@@ -392,6 +352,19 @@
           </nav>
         </div>
       </main>
+      <footer class="bg-white border-t border-gray-200 py-4 px-6 text-center text-sm text-gray-500">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-2 md:mb-0">
+                        <span>© 2025 CertEasy. All rights reserved.</span>
+                    </div>
+                    <div class="flex space-x-4">
+                        <a href="/terms/" class="hover:text-green-600">Terms</a>
+                        <a href="/privacy/" class="hover:text-green-600">Privacy</a>
+                        <a href="/help/" class="hover:text-green-600">Help</a>
+                        <a href="/contact/" class="hover:text-green-600">Contact</a>
+                    </div>
+                </div>
+            </footer>
 
       <!-- Enhanced Create New Post Modal -->
       <div x-show="newPostOpen" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black bg-opacity-40" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -596,19 +569,33 @@
     </div>
   </div>
 
-  <!-- Toaster Notification -->
-  <div x-data="{ show: false, message: '', type: 'success', showToast(msg, t = 'success') { this.message = msg; this.type = t; this.show = true; setTimeout(() => this.show = false, 2500); } }" x-ref="toaster" id="toaster-notification" class="fixed top-6 right-6 z-50">
-    <div x-show="show" x-transition class="flex items-center px-5 py-3 rounded-lg shadow-lg text-white"
-      :class="type === 'success' ? 'bg-green-600' : 'bg-red-600'" style="display: none;">
-      <i class="fas fa-check-circle mr-3 text-xl" x-show="type === 'success'"></i>
-      <i class="fas fa-exclamation-circle mr-3 text-xl" x-show="type === 'error'"></i>
-      <span x-text="message"></span>
-    </div>
-  </div>
-
   <script>
-    // Handle notification read
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('toaster', () => ({
+        show: false,
+        message: '',
+        type: 'success',
+        showToast(msg, t = 'success') {
+          this.message = msg;
+          this.type = t;
+          this.show = true;
+          setTimeout(() => this.show = false, 2500);
+        }
+      }));
+    });
+
+    // Global function to show toast
+    function showToast(msg, type = 'success') {
+      const toaster = document.querySelector('#toaster-notification');
+      if (toaster && toaster.__x) {
+        toaster.__x.$data.showToast(msg, type);
+      } else {
+        console.error('Toaster component not found or not initialized');
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+      // Handle notification read
       const notificationItems = document.querySelectorAll('.notification-item');
       notificationItems.forEach(item => {
         item.addEventListener('click', function() {
@@ -812,16 +799,6 @@
         confirm: null,
       }));
     });
-
-    // Global function to show toast
-    function showToast(msg, type = 'success') {
-      const toaster = document.querySelector('#toaster-notification');
-      if (toaster && toaster.__x) {
-        toaster.__x.$data.showToast(msg, type);
-      } else {
-        console.error('Toaster component not found or not initialized');
-      }
-    }
 
     document.addEventListener('DOMContentLoaded', function() {
       // Handle create post form submission

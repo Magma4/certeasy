@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ certification.title }} - CertEasy</title>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="h-screen overflow-hidden font-sans bg-gray-50">
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed z-30 inset-y-0 left-0 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
+      <div class="flex flex-col justify-between h-full">
+        <div>
+          <div class="flex items-center space-x-2 px-6 py-5 border-b border-gray-700">
+            <div class="bg-white p-1 rounded-md">
+              <img src="/static/uploads/ce.png" alt="Logo" class="h-8">
+            </div>
+            <span class="font-bold text-white text-lg">CertEasy</span>
+          </div>
+          <nav class="mt-6 flex flex-col space-y-1 px-3 text-sm">
+            <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded  text-white font-medium">
+              <i class="fas fa-chart-line mr-3 text-green-300"></i> Overview
+            </a>
+            <a href="{% url 'mycertifications' %}" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active hover:bg-gray-800/50">
+              <i class="fas fa-graduation-cap mr-3 text-green-300"></i> My Certifications
+            </a>
+            <a href="{% url 'resources' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-book mr-3 text-green-300"></i> Resources
+            </a>
+            <a href="{% url 'flashcards' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-brain mr-3 text-green-300"></i> Flashcards
+            </a>
+            <a href="{% url 'quizzes' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-clipboard-check mr-3 text-green-300"></i> Quizzes
+            </a>
+            <a href="{% url 'discussions' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-comments mr-3 text-green-300"></i> Community
+            </a>
+          </nav>
+        </div>
+
+        <div class="p-4 m-4 bg-gray-800 rounded-lg">
+          <div class="flex items-center mb-3">
+            <i class="fas fa-rocket text-green-300 mr-2"></i>
+            <h4 class="font-medium text-white">Pro Upgrade</h4>
+          </div>
+          <p class="text-xs text-gray-300 mb-3">Get unlimited access to all certification materials</p>
+          <button class="w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
+            Upgrade Now
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Overlay on small screens -->
+    <div x-show="sidebarOpen" class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" @click="sidebarOpen = false"></div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50">
+
+      <!-- Top bar -->
+      <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+        <div class="flex items-center space-x-4 lg:hidden">
+          <button @click="sidebarOpen = !sidebarOpen" class="text-gray-700 focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <span class="font-semibold text-lg">Subscription</span>
+        </div>
+
+        <div class="hidden lg:block">
+          <span class="text-2xl font-bold text-gray-800 tracking-tight">Subscription</span>
+        </div>
+
+          <div class="flex-1 flex justify-end items-center space-x-4">
+            {% include 'partials/notification_dropdown.html' %}
+
+          <a href="/calendar/" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
+            <i class="fas fa-calendar-alt"></i>
+          </a>
+
+          <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
+              <div class="relative">
+                <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=10B981&color=fff" class="w-9 h-9 rounded-full border-2 border-green-100" alt="User avatar">
+                <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+              </div>
+              <span class="text-sm font-medium text-gray-700 hidden md:inline">{{ user.get_full_name|default:user.username|title }}</span>
+              <i class="fas fa-chevron-down text-xs text-gray-500 hidden md:inline"></i>
+            </button>
+            <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100">
+              <div class="px-4 py-3 border-b border-gray-100">
+                <p class="text-sm font-semibold">{{ user.get_full_name|default:user.username|title }}</p>
+                <p class="text-xs text-gray-500">{{ user.email }}</p>
+              </div>
+              <a href="/profile/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <i class="fas fa-user mr-3 text-gray-400 w-5"></i>
+                Profile
+              </a>
+              <div class="border-t border-gray-100 mt-2"></div>
+              <a href="{% url 'account_logout' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <i class="fas fa-sign-out-alt mr-3 text-gray-400 w-5"></i>
+                Logout
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main class="p-6 lg:p-10 bg-gray-50 text-gray-800 font-sans">
+        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 mt-8">
+          <div class="flex flex-col md:flex-row md:items-center md:space-x-8 mb-8">
+            <img src="{{ certification.image_url|default:'/static/uploads/ce.png' }}" alt="{{ certification.title }} Logo" class="h-32 w-32 rounded-lg object-cover mb-4 md:mb-0">
+            <div>
+              <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ certification.title }}</h1>
+              <div class="flex items-center space-x-3 mb-2">
+                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">{{ certification.category }}</span>
+                <span class="text-xs text-gray-500">{{ certification.students|default:'N/A' }} students</span>
+              </div>
+              <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-8 mt-2">
+                <div class="flex flex-col items-start bg-green-50 rounded-lg p-4 shadow-sm w-full sm:w-auto">
+                  <span class="text-xs text-gray-500 mb-1">Monthly</span>
+                  <span class="text-2xl font-bold text-green-600 mb-2">${{ certification.monthly_price|default:'39.00' }}</span>
+                  <form method="post" action="">
+                    {% csrf_token %}
+                    <input type="hidden" name="plan" value="monthly">
+                    <button type="submit" class="w-full px-6 py-2 bg-green-600 text-white rounded-lg font-semibold text-base shadow hover:bg-green-700 transition flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-400">
+                      <i class="fas fa-plus-circle mr-2"></i> Subscribe Monthly
+                    </button>
+                  </form>
+                </div>
+                <div class="flex flex-col items-start bg-blue-50 rounded-lg p-4 shadow-sm w-full sm:w-auto">
+                  <span class="text-xs text-gray-500 mb-1">Yearly</span>
+                  <span class="text-2xl font-bold text-blue-600 mb-2">${{ certification.yearly_price|default:'399.00' }}</span>
+                  <form method="post" action="">
+                    {% csrf_token %}
+                    <input type="hidden" name="plan" value="yearly">
+                    <button type="submit" class="w-full px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold text-base shadow hover:bg-blue-700 transition flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-400">
+                      <i class="fas fa-plus-circle mr-2"></i> Subscribe Yearly
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-2">About this Certification</h2>
+            <p class="text-gray-600">{{ certification.description }}</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div>
+              <h3 class="text-md font-semibold text-gray-700 mb-1">Duration</h3>
+              <p class="text-gray-600">{{ certification.duration|default:'Varies' }}</p>
+            </div>
+            <div>
+              <h3 class="text-md font-semibold text-gray-700 mb-1">Category</h3>
+              <p class="text-gray-600">{{ certification.category }}</p>
+            </div>
+          </div>
+          <!-- Add more course details here if needed -->
+          <div class="flex justify-between items-center mt-8">
+            <a href="{% url 'mycertifications' %}" class="text-green-600 hover:underline flex items-center text-sm"><i class="fas fa-arrow-left mr-2"></i>Back to Certifications</a>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

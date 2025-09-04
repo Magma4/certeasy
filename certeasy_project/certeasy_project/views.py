@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from certifications.models import Certification
 from django.contrib.auth.decorators import login_required
-from accounts.models import Subscription
+from accounts.models import Subscription, User, UserLogin
 from quizzes.models import Quiz, QuizAttempt
 from django.db.models import Avg, Count
 from django.utils import timezone
@@ -10,8 +10,17 @@ from django.http import HttpResponseRedirect, JsonResponse
 from resources.models import Resource, VideoView
 from discussions.models import Post, Like, Comment
 from django.core.paginator import Paginator
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.template.loader import render_to_string
+from flashcards.models import Flashcard
+from study_plans.models import StudyPlan
+import json
+from django.core.serializers.json import DjangoJSONEncoder
+from datetime import timedelta
+from collections import defaultdict
+import math
+from django.views.decorators.csrf import csrf_exempt
+from datetime import datetime
 
 def landing_page(request):
     return render(request, 'landing_page.html')
@@ -24,114 +33,156 @@ def signup_page(request):
 
 @login_required
 def dashboard_page(request):
+    user = request.user
     # Get user's active certifications
     active_subscriptions = Subscription.objects.filter(
-        user=request.user,
+        user=user,
         active=True
     ).select_related('certification')
+    active_certifications = [sub.certification for sub in active_subscriptions]
+    active_cert_ids = [cert.id for cert in active_certifications]
 
-    # Get all certifications for the slider
-    certifications = Certification.objects.all()
+    # Handle new study plan submission
+    if request.method == "POST":
+        StudyPlan.objects.create(
+            user=user,
+            certification_id=request.POST.get("certification"),
+            title=request.POST.get("title"),
+            activity_type=request.POST.get("activity_type"),
+            scheduled_date=request.POST.get("scheduled_date"),
+            scheduled_time=request.POST.get("scheduled_time"),
+            duration=request.POST.get("duration"),
+        )
+        return redirect("dashboard")
 
-    # Calculate overall progress based on quiz attempts
+    # Get ALL certifications
+    all_certifications = Certification.objects.all()
+
+    # Calculate progress for each active certification (quizzes + videos)
+    for cert in active_certifications:
+        # Quizzes
+        cert_quizzes = Quiz.objects.filter(certification=cert)
+        total_quizzes = cert_quizzes.count()
+        completed_quizzes = QuizAttempt.objects.filter(
+            quiz__in=cert_quizzes,
+            user=request.user,
+            completed=True
+        ).values('quiz').distinct().count()
+        # Videos
+        total_videos = Resource.objects.filter(certification=cert, type='video').count()
+        watched_videos = VideoView.objects.filter(user=request.user, resource__certification=cert).count()
+        # Progress calculation
+        total_items = total_quizzes + total_videos
+        completed_items = completed_quizzes + watched_videos
+        if total_items > 0:
+            cert.progress = float(completed_items) / float(total_items) * 100
+            if math.isnan(cert.progress) or cert.progress is None:
+                cert.progress = 0.0
+        else:
+            cert.progress = 0.0
+
+    # --- Calculate streak ---
+    today = timezone.now().date()
+    login_dates = set(UserLogin.objects.filter(
+        user=user,
+        login_date__gte=today - timedelta(days=30)  # Look back 30 days
+    ).values_list('login_date', flat=True))
+
+    streak = 0
+    current_date = today
+    while current_date in login_dates:
+        streak += 1
+        current_date -= timedelta(days=1)
+
+    # If today's login hasn't been recorded yet, add it
+    if today not in login_dates:
+        UserLogin.objects.get_or_create(user=user, login_date=today)
+        streak += 1
+
+    # --- Get notifications ---
+    notifications = _get_user_notifications(user)
+
+    # --- Calculate overall progress ---
+    total_items = 0
+    completed_items = 0
+    all_completed = True
+
+    for cert in all_certifications:
+        # Videos
+        total_videos = Resource.objects.filter(certification=cert, type='video').count()
+        watched_videos = VideoView.objects.filter(user=user, resource__certification=cert).count()
+
+        # Quizzes
+        total_quizzes = Quiz.objects.filter(certification=cert).count()
+        completed_quizzes = QuizAttempt.objects.filter(
+            user=user,
+            quiz__certification=cert,
+            completed=True
+        ).values('quiz').distinct().count()
+
+        if total_videos > 0 and watched_videos < total_videos:
+            all_completed = False
+        if total_quizzes > 0 and completed_quizzes < total_quizzes:
+            all_completed = False
+
+        total_items += total_videos + total_quizzes
+        completed_items += watched_videos + completed_quizzes
+
+    overall_progress = 100 if all_completed and total_items > 0 else int((completed_items / total_items) * 100) if total_items > 0 else 0
+
+    # Calculate quiz average
     quiz_attempts = QuizAttempt.objects.filter(
         user=request.user,
         completed=True
     ).select_related('quiz')
-
-    # Calculate progress for each certification
-    total_progress = 0
-    for sub in active_subscriptions:
-        # Get all quizzes for this certification
-        cert_quizzes = Quiz.objects.filter(certification=sub.certification)
-        total_quizzes = cert_quizzes.count()
-
-        if total_quizzes > 0:
-            # Get completed quizzes for this certification
-            completed_quizzes = quiz_attempts.filter(
-                quiz__in=cert_quizzes
-            ).values('quiz').distinct().count()
-
-            # Calculate progress percentage
-            cert_progress = (completed_quizzes / total_quizzes) * 100
-            total_progress += cert_progress
-
-    # Calculate average progress across all certifications
-    overall_progress = (total_progress / len(active_subscriptions)) if active_subscriptions else 0
-
-    # Calculate quiz average
     quiz_average = quiz_attempts.aggregate(
         avg_score=Avg('score')
     )['avg_score'] or 0
 
-    # Get user's study streak (consecutive days of activity)
-    today = timezone.now().date()
-    streak = 0
-    current_date = today
-    while True:
-        has_activity = quiz_attempts.filter(
-            start_time__date=current_date
-        ).exists()
-        if not has_activity:
-            break
-        streak += 1
-        current_date -= timezone.timedelta(days=1)
+    # Get user's custom study plans
+    study_plans = StudyPlan.objects.filter(user=user)
+    print('--- DEBUG: Today is', today)
+    for plan in study_plans:
+        print('StudyPlan:', plan.id, 'scheduled_date:', plan.scheduled_date)
+    study_plans = study_plans.filter(scheduled_date=today).order_by('scheduled_time')
+    today_tasks = []
+    for plan in study_plans:
+        scheduled_time = plan.scheduled_time
+        if isinstance(scheduled_time, str):
+            try:
+                scheduled_time = datetime.strptime(scheduled_time, '%H:%M').time()
+            except ValueError:
+                try:
+                    scheduled_time = datetime.strptime(scheduled_time, '%H:%M:%S').time()
+                except Exception:
+                    scheduled_time = None
+        time_str = scheduled_time.strftime('%I:%M %p') if scheduled_time else str(plan.scheduled_time)
+        today_tasks.append({
+            'id': plan.id,
+            'time': time_str,
+            'title': plan.title,
+            'duration': f"{plan.duration} min",
+            'activity': plan.get_activity_type_display(),
+            'status': plan.status.replace('_', ' ').title()
+        })
 
-    # Get today's tasks
-    today_tasks = [
-        {
-            'id': 1,
-            'time': '09:00 AM',
-            'title': 'GRE Verbal Practice',
-            'duration': '45 min',
-            'activity': 'Quiz',
-            'status': 'Completed'
-        },
-        {
-            'id': 2,
-            'time': '11:00 AM',
-            'title': 'LSAT Logic Games',
-            'duration': '60 min',
-            'activity': 'Practice',
-            'status': 'In Progress'
-        },
-        {
-            'id': 3,
-            'time': '02:00 PM',
-            'title': 'CFA Ethics Review',
-            'duration': '30 min',
-            'activity': 'Reading',
-            'status': 'Upcoming'
-        }
-    ]
-
-    # Get notifications
-    notifications = [
-        {
-            'id': 1,
-            'title': 'New quiz available',
-            'time': '2 hours ago',
-            'type': 'resource',
-            'icon': 'book-open'
-        },
-        {
-            'id': 2,
-            'title': 'Study group meeting',
-            'time': 'Yesterday',
-            'type': 'calendar',
-            'icon': 'calendar'
-        },
-        {
-            'id': 3,
-            'title': 'New flashcards added',
-            'time': '2 days ago',
-            'type': 'resource',
-            'icon': 'brain'
-        }
-    ]
-
-    # Get recent activity
-    recent_activity = quiz_attempts.order_by('-start_time')[:4]
+    # Get recent activity: quizzes and videos
+    recent_quiz_activity = QuizAttempt.objects.filter(
+        user=user
+    ).select_related('quiz').order_by('-start_time')[:4]
+    recent_video_activity = VideoView.objects.filter(
+        user=user
+    ).select_related('resource').order_by('-watched_at')[:4]
+    # Merge and sort by time (most recent first)
+    recent_activity = list(recent_quiz_activity) + list(recent_video_activity)
+    recent_activity.sort(key=lambda x: getattr(x, 'start_time', None) or getattr(x, 'watched_at', None), reverse=True)
+    recent_activity = recent_activity[:7]
+    # Annotate type for template logic
+    for activity in recent_activity:
+        if hasattr(activity, 'quiz'):
+            activity.type = 'quiz'
+        elif hasattr(activity, 'resource'):
+            activity.type = 'video'
 
     # Get upcoming exams
     upcoming_exams = [
@@ -166,35 +217,136 @@ def dashboard_page(request):
 
     # Prepare user statistics
     user_stats = {
-        'overall_progress': round(overall_progress, 1),
+        'overall_progress': overall_progress,
         'tasks_total': len(today_tasks),
         'tasks_completed': len([task for task in today_tasks if task['status'] == 'Completed']),
         'streak': streak,
         'quiz_average': round(quiz_average, 1)
     }
 
-    # Add progress to each certification for the slider
-    for cert in certifications:
-        cert_quizzes = Quiz.objects.filter(certification=cert)
-        total_quizzes = cert_quizzes.count()
-        if total_quizzes > 0:
-            completed_quizzes = quiz_attempts.filter(
-                quiz__in=cert_quizzes,
-                completed=True
-            ).values('quiz').distinct().count()
-            cert.progress = (completed_quizzes / total_quizzes) * 100
-        else:
-            cert.progress = 0
+    # Get 7 quizzes the user has not yet attempted (from active certifications)
+    attempted_quiz_ids = QuizAttempt.objects.filter(user=user).values_list('quiz_id', flat=True)
+    unattempted_quizzes = Quiz.objects.filter(certification__in=active_certifications).exclude(id__in=attempted_quiz_ids)[:7]
 
     return render(request, 'dashboard.html', {
         'user': request.user,
-        'certifications': certifications,
+        'certifications': all_certifications,
+        'active_certifications': active_certifications,
         'user_stats': user_stats,
         'notifications': notifications,
         'study_plan': today_tasks,
         'recent_activity': recent_activity,
-        'upcoming_exams': upcoming_exams
+        'upcoming_exams': upcoming_exams,
+        'unattempted_quizzes': unattempted_quizzes,
     })
+
+def _get_user_notifications(user):
+    """Helper function to get user notifications"""
+    notifications = []
+    from quizzes.models import QuizAttempt
+    from discussions.models import Like, Comment
+    from accounts.models import Subscription
+    from django.utils import timezone
+    from datetime import timedelta
+
+    # Quiz notifications
+    recent_quiz_attempts = QuizAttempt.objects.filter(
+        user=user,
+        start_time__gte=timezone.now() - timedelta(days=7)
+    ).select_related('quiz').order_by('-start_time')[:3]
+
+    for attempt in recent_quiz_attempts:
+        if attempt.completed:
+            score = round(attempt.score, 1)
+            notifications.append({
+                'id': f'quiz_{attempt.id}',
+                'title': f"Completed {attempt.quiz.title} (Score: {score}%)",
+                'time': _humanize_time(timezone.now() - attempt.start_time),
+                'type': 'quiz',
+                'icon': 'clipboard-check',
+            })
+
+    # Streak notifications
+    today = timezone.now().date()
+    login_dates = set(UserLogin.objects.filter(
+        user=user,
+        login_date__gte=today - timedelta(days=30)
+    ).values_list('login_date', flat=True))
+
+    streak = 0
+    current_date = today
+    while current_date in login_dates:
+        streak += 1
+        current_date -= timedelta(days=1)
+
+    if streak == 0:
+        notifications.append({
+            'id': 'streak_break',
+            'title': 'Your streak has ended',
+            'time': 'Just now',
+            'type': 'streak',
+            'icon': 'fire',
+            'message': 'Log in tomorrow to start a new streak!'
+        })
+
+    # Post interaction notifications
+    recent_likes = Like.objects.filter(
+        post__user=user,
+        created_at__gte=timezone.now() - timedelta(days=7)
+    ).select_related('post', 'user').order_by('-created_at')[:3]
+
+    for like in recent_likes:
+        notifications.append({
+            'id': f'like_{like.id}',
+            'title': f'{like.user.get_full_name() or like.user.username} liked your post',
+            'time': _humanize_time(timezone.now() - like.created_at),
+            'type': 'like',
+            'icon': 'thumbs-up',
+            'post_title': like.post.title
+        })
+
+    recent_comments = Comment.objects.filter(
+        post__user=user,
+        created_at__gte=timezone.now() - timedelta(days=7)
+    ).select_related('post', 'user').order_by('-created_at')[:3]
+
+    for comment in recent_comments:
+        notifications.append({
+            'id': f'comment_{comment.id}',
+            'title': f'{comment.user.get_full_name() or comment.user.username} commented on your post',
+            'time': _humanize_time(timezone.now() - comment.created_at),
+            'type': 'comment',
+            'icon': 'comment',
+            'post_title': comment.post.title
+        })
+
+    # Subscription notifications
+    expiring_subscriptions = Subscription.objects.filter(
+        user=user,
+        active=True,
+        end_date__isnull=False
+    ).select_related('certification')
+
+    for sub in expiring_subscriptions:
+        days_left = (sub.end_date.date() - timezone.now().date()).days
+        if days_left > 0:
+            title = f"{sub.certification.title} subscription expires in {days_left} day{'s' if days_left != 1 else ''}"
+            time_str = f"in {days_left} day{'s' if days_left != 1 else ''}"
+        elif days_left == 0:
+            title = f"{sub.certification.title} subscription expires today"
+            time_str = "today"
+        else:
+            title = f"{sub.certification.title} subscription expired {abs(days_left)} day{'s' if abs(days_left) != 1 else ''} ago"
+            time_str = f"{abs(days_left)} day{'s' if abs(days_left) != 1 else ''} ago"
+        notifications.append({
+            'id': f'sub_{sub.id}',
+            'title': title,
+            'time': time_str,
+            'type': 'subscription',
+            'icon': 'calendar',
+        })
+
+    return notifications
 
 @login_required
 def mycertifications(request):
@@ -212,10 +364,86 @@ def mycertifications(request):
         id__in=[cert.id for cert in active_certifications]
     )
 
+    # Calculate progress for each active certification (quizzes + videos)
+    for cert in active_certifications:
+        # Quizzes
+        cert_quizzes = Quiz.objects.filter(certification=cert)
+        total_quizzes = cert_quizzes.count()
+        completed_quizzes = QuizAttempt.objects.filter(
+            quiz__in=cert_quizzes,
+            user=request.user,
+            completed=True
+        ).values('quiz').distinct().count()
+        # Videos
+        total_videos = Resource.objects.filter(certification=cert, type='video').count()
+        watched_videos = VideoView.objects.filter(user=request.user, resource__certification=cert).count()
+        # Progress calculation
+        total_items = total_quizzes + total_videos
+        completed_items = completed_quizzes + watched_videos
+        if total_items > 0:
+            cert.progress = float(completed_items) / float(total_items) * 100
+            if math.isnan(cert.progress) or cert.progress is None:
+                cert.progress = 0.0
+        else:
+            cert.progress = 0.0
+
+    # --- Weekly study hours breakdown ---
+    today = timezone.now().date()
+    days = [(today - timedelta(days=i)) for i in range(6, -1, -1)]  # 7 days, oldest to newest
+    weekly_study = {}
+    for cert in active_certifications:
+        cert_days = []
+        for day in days:
+            # --- Videos: sum durations from VideoView (if available), else estimate 5 min per video ---
+            video_minutes = 0
+            video_views = VideoView.objects.filter(
+                user=request.user,
+                resource__certification=cert,
+                watched_at__date=day
+            )
+            for view in video_views:
+                # If you have a duration field, use it. Otherwise, estimate 5 min per view.
+                if hasattr(view, 'duration') and view.duration:
+                    video_minutes += int(view.duration / 60)
+                else:
+                    video_minutes += 5
+
+            # --- Quizzes: sum duration of completed QuizAttempts for this cert and day ---
+            quiz_minutes = 0
+            quiz_attempts = QuizAttempt.objects.filter(
+                user=request.user,
+                quiz__certification=cert,
+                completed=True,
+                start_time__date=day
+            )
+            for attempt in quiz_attempts:
+                if attempt.end_time and attempt.start_time:
+                    duration = (attempt.end_time - attempt.start_time).total_seconds() / 60
+                    quiz_minutes += max(1, int(duration))  # At least 1 min per quiz
+
+            # Flashcards: no tracking, set to 0
+            flashcard_minutes = 0
+
+            cert_days.append({
+                'date': day.strftime('%Y-%m-%d'),
+                'resources': video_minutes,
+                'quizzes': quiz_minutes,
+                'flashcards': flashcard_minutes,
+            })
+        weekly_study[cert.id] = {
+            'title': cert.title,
+            'days': cert_days
+        }
+
+    # Get notifications
+    notifications = _get_user_notifications(request.user)
+
     return render(request, 'mycertifications.html', {
         'certifications': active_certifications,
         'all_certifications': all_certifications,
-        'user': request.user
+        'user': request.user,
+        'weekly_study': weekly_study,
+        'notifications': notifications,
     })
 
 @login_required
@@ -248,6 +476,9 @@ def resources(request):
     # Get watched videos for this user
     watched_videos = set(VideoView.objects.filter(user=request.user).values_list('resource_id', flat=True))
 
+    # Get notifications
+    notifications = _get_user_notifications(request.user)
+
     return render(request, 'resources.html', {
         'resources': resources,
         'certifications': certifications,
@@ -255,6 +486,7 @@ def resources(request):
         'cert_filter': cert_filter,
         'type_filter': type_filter,
         'watched_videos': watched_videos,
+        'notifications': notifications,
     })
 
 def forgot_password_page(request):
@@ -266,8 +498,56 @@ def reset_confirm_page(request, uidb64, token):
         'token': token,
     })
 
+@login_required
 def flashcards(request):
-    return render(request, 'flashcards.html')
+    # Get user's active certifications
+    user_cert_ids = Subscription.objects.filter(
+        user=request.user,
+        active=True
+    ).values_list('certification_id', flat=True)
+
+    certifications = Certification.objects.filter(id__in=user_cert_ids)
+
+    # Get all flashcards for user's certifications
+    flashcards = Flashcard.objects.filter(
+        certification__in=certifications
+    ).select_related('certification').order_by('-created_at')
+
+    # Get recent flashcards (last 6)
+    recent_flashcards = flashcards[:6]
+
+    # Get unique topics and their counts
+    topics = flashcards.exclude(topic__isnull=True).values('topic').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    # Add flashcard counts and JSON to certifications
+    for cert in certifications:
+        cert.flashcards_count = cert.flashcards.count()
+        cert.flashcards_json = json.dumps([
+            {
+                'id': card.id,
+                'front_text': card.front_text,
+                'back_text': card.back_text,
+                'topic': card.topic or '',
+            }
+            for card in cert.flashcards.all()
+        ], cls=DjangoJSONEncoder)
+        # Get recent users studying this certification (last 3)
+        cert.recent_users = User.objects.filter(
+            subscriptions__certification=cert,  # Changed from subscription to subscriptions
+            subscriptions__active=True
+        ).distinct()[:3]
+        cert.users_count = cert.recent_users.count()
+
+    notifications = _get_user_notifications(request.user)
+    return render(request, 'flashcards.html', {
+        'certifications': certifications,
+        'recent_flashcards': recent_flashcards,
+        'topics': topics,
+        'user': request.user,
+        'notifications': notifications,
+    })
 
 @login_required
 def quizzes(request):
@@ -346,31 +626,6 @@ def quizzes(request):
         )['avg_score'] or 0
     }
 
-    # Get notifications
-    notifications = [
-        {
-            'id': 1,
-            'title': 'New quiz available',
-            'time': '2 hours ago',
-            'type': 'resource',
-            'icon': 'book-open'
-        },
-        {
-            'id': 2,
-            'title': 'Study group meeting',
-            'time': 'Yesterday',
-            'type': 'calendar',
-            'icon': 'calendar'
-        },
-        {
-            'id': 3,
-            'title': 'New flashcards added',
-            'time': '2 days ago',
-            'type': 'resource',
-            'icon': 'brain'
-        }
-    ]
-
     # Get study plan
     study_plan = [
         {
@@ -399,6 +654,7 @@ def quizzes(request):
         }
     ]
 
+    notifications = _get_user_notifications(request.user)
     return render(request, 'quizzes.html', {
         'quizzes': quizzes,
         'quiz_attempts': quiz_attempts,
@@ -406,51 +662,45 @@ def quizzes(request):
         'recommended_quizzes': recommended_quizzes,
         'user': request.user,
         'user_stats': user_stats,
+        'study_plan': study_plan,
         'notifications': notifications,
-        'study_plan': study_plan
     })
 
 @login_required
 def quiz_detail(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
-
-    # Get user's previous attempts for this quiz
     quiz_attempts = QuizAttempt.objects.filter(
         user=request.user,
         quiz=quiz
     ).order_by('-start_time')
-
-    # Get average score for this quiz
     avg_score = quiz_attempts.aggregate(
         avg_score=Avg('score')
     )['avg_score'] or 0
-
-    # Get best attempt
     best_attempt = quiz_attempts.order_by('-score').first()
-
+    notifications = _get_user_notifications(request.user)
     return render(request, 'quiz_detail.html', {
         'quiz': quiz,
         'quiz_attempts': quiz_attempts,
         'avg_score': avg_score,
         'best_attempt': best_attempt,
-        'user': request.user
+        'user': request.user,
+        'notifications': notifications,
     })
 
 @login_required
 def start_quiz(request, quiz_id):
     quiz = get_object_or_404(Quiz.objects.prefetch_related('questions'), id=quiz_id)
-
-    # Create a new quiz attempt
     attempt = QuizAttempt.objects.create(
         user=request.user,
         quiz=quiz,
         start_time=timezone.now()
     )
-
+    notifications = _get_user_notifications(request.user)
     return render(request, 'quiz_take.html', {
         'quiz': quiz,
         'attempt': attempt,
-        'user': request.user
+        'user': request.user,
+        'notifications': notifications,
     })
 
 @login_required
@@ -532,63 +782,47 @@ def quiz_results(request, attempt_id):
     attempt = get_object_or_404(QuizAttempt, id=attempt_id, user=request.user)
     quiz = attempt.quiz
     questions = quiz.questions.all()
-    # Assume user_answers is a dict: {question_id: answer}
     user_answers = getattr(attempt, 'user_answers', {}) or {}
+    notifications = _get_user_notifications(request.user)
     return render(request, 'quiz_results.html', {
         'quiz': quiz,
         'attempt': attempt,
         'questions': questions,
         'user': request.user,
         'user_answers': user_answers,
+        'notifications': notifications,
     })
 
 def discussions(request):
+    # Get notifications
+    notifications = _get_user_notifications(request.user)
+
     # Get all posts with related user and certification
     posts_qs = Post.objects.select_related('user', 'certification').prefetch_related('comments', 'likes')
+
+    # Only show posts from certifications the user is subscribed to
+    if request.user.is_authenticated:
+        user_cert_ids = Subscription.objects.filter(user=request.user, active=True).values_list('certification_id', flat=True)
+        posts_qs = posts_qs.filter(certification_id__in=user_cert_ids)
+        certifications = Certification.objects.filter(id__in=user_cert_ids)
+        liked_posts = set(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
+    else:
+        posts_qs = Post.objects.none()  # Return empty queryset for non-authenticated users
+        certifications = Certification.objects.none()
+        liked_posts = set()
+
     paginator = Paginator(posts_qs, 5)  # 5 posts per page
     page_number = request.GET.get('page')
     posts = paginator.get_page(page_number)
 
-    # Only certifications the user is subscribed to
-    if request.user.is_authenticated:
-        user_cert_ids = Subscription.objects.filter(user=request.user, active=True).values_list('certification_id', flat=True)
-        certifications = Certification.objects.filter(id__in=user_cert_ids)
-        liked_posts = set(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
-    else:
-        certifications = Certification.objects.none()
-        liked_posts = set()
-
     user = request.user if request.user.is_authenticated else None
-    notifications = [
-        {
-            'id': 1,
-            'title': 'New reply to your post',
-            'time': '1 hour ago',
-            'type': 'comment',
-            'icon': 'comment'
-        },
-        {
-            'id': 2,
-            'title': 'Your post was upvoted',
-            'time': 'Yesterday',
-            'type': 'like',
-            'icon': 'thumbs-up'
-        },
-        {
-            'id': 3,
-            'title': 'New post in GRE',
-            'time': '2 days ago',
-            'type': 'resource',
-            'icon': 'book-open'
-        }
-    ]
     return render(request, 'discussions.html', {
         'posts': posts,
         'certifications': certifications,
         'user': user,
-        'notifications': notifications,
         'liked_posts': liked_posts,
         'paginator': paginator,
+        'notifications': notifications,
     })
 
 @login_required
@@ -609,19 +843,29 @@ def create_post(request):
         title = request.POST.get('title')
         body = request.POST.get('body')
         certification_id = request.POST.get('certification')
-        if title and body and certification_id:
-            post = Post.objects.create(
-                user=request.user,
-                title=title,
-                body=body,
-                certification_id=certification_id
-            )
+
+        if not (title and body and certification_id):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
-                    'success': True,
-                    'message': 'Post created successfully!',
-                    'post_id': post.id
-                })
+                    'success': False,
+                    'message': 'All fields are required.'
+                }, status=400)
+            return redirect('discussions')
+
+        post = Post.objects.create(
+            user=request.user,
+            title=title,
+            body=body,
+            certification_id=certification_id
+        )
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Post created successfully!',
+                'post_id': post.id
+            })
+
         return redirect('discussions')
     return redirect('discussions')
 
@@ -678,3 +922,97 @@ def update_comment(request, comment_id):
         comment.save()
         return JsonResponse({'success': True, 'body': comment.body})
     return JsonResponse({'success': False, 'error': 'Missing body'})
+
+@login_required
+@csrf_exempt
+@require_POST
+def create_study_plan(request):
+    try:
+        data = json.loads(request.body)
+
+        # Validate required fields
+        required_fields = ['title', 'certification', 'activity_type', 'scheduled_date', 'scheduled_time', 'duration']
+        for field in required_fields:
+            if not data.get(field):
+                return JsonResponse({
+                    'success': False,
+                    'message': f'{field.replace("_", " ").title()} is required.'
+                }, status=400)
+
+        # Create study plan
+        study_plan = StudyPlan.objects.create(
+            user=request.user,
+            certification_id=data['certification'],
+            title=data['title'],
+            activity_type=data['activity_type'],
+            scheduled_date=data['scheduled_date'],
+            scheduled_time=data['scheduled_time'],
+            duration=data['duration'],
+            notes=data.get('notes', ''),
+            status='scheduled'
+        )
+
+        # Ensure scheduled_time is a time object before calling strftime
+        scheduled_time = study_plan.scheduled_time
+        if isinstance(scheduled_time, str):
+            try:
+                scheduled_time = datetime.strptime(scheduled_time, '%H:%M').time()
+            except ValueError:
+                try:
+                    scheduled_time = datetime.strptime(scheduled_time, '%H:%M:%S').time()
+                except Exception:
+                    scheduled_time = None
+        time_str = scheduled_time.strftime('%I:%M %p') if scheduled_time else str(study_plan.scheduled_time)
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Study plan created successfully!',
+            'study_plan': {
+                'id': study_plan.id,
+                'title': study_plan.title,
+                'time': time_str,
+                'duration': f"{study_plan.duration} min",
+                'activity': study_plan.get_activity_type_display(),
+                'status': study_plan.status.replace('_', ' ').title()
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=400)
+
+def _humanize_time(delta):
+    if isinstance(delta, str):
+        return delta
+    if delta.days > 0:
+        return f"{delta.days} day{'s' if delta.days != 1 else ''} ago"
+    hours = delta.seconds // 3600
+    if hours > 0:
+        return f"{hours} hour{'s' if hours != 1 else ''} ago"
+    minutes = delta.seconds // 60
+    if minutes > 0:
+        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+    return "Just now"
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def certification_view(request, cert_id):
+    certification = get_object_or_404(Certification, id=cert_id)
+    if request.method == "POST":
+        # Subscribe the user if not already subscribed
+        from accounts.models import Subscription
+        if not Subscription.objects.filter(user=request.user, certification=certification, active=True).exists():
+            Subscription.objects.create(user=request.user, certification=certification, plan='monthly', active=True)
+        return redirect('mycertifications')
+    return render(request, 'certification.html', {
+        'certification': certification,
+        'user': request.user
+    })
+
+def notification_dropdown_view(request):
+    user = request.user
+    # --- Get notifications (same as dashboard) ---
+    notifications = _get_user_notifications(user)
+    return render(request, 'partials/notification_dropdown.html', {'notifications': notifications})

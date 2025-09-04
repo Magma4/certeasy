@@ -7,6 +7,8 @@ class Certification(models.Model):
     progress = models.PositiveIntegerField(default=0)  # % progress (0-100)
     students = models.PositiveIntegerField(default=0)  # number of enrolled users
     image = models.ImageField(upload_to='media/certifications/', null=True, blank=True)
+    monthly_price = models.DecimalField(max_digits=8, decimal_places=2, default=39.00)
+    yearly_price = models.DecimalField(max_digits=8, decimal_places=2, default=399.00)
 
     def __str__(self):
         return self.title

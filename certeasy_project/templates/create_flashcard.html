@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{
+    sidebarOpen: false,
+    profileOpen: false,
+    notifyOpen: false,
+    notifications: {{ notifications|safe }},
+}" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create Flashcard - CertEasy</title>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body class="h-screen overflow-hidden font-sans">
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed z-30 inset-y-0 left-0 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
+      <div class="flex flex-col justify-between h-full">
+        <div>
+          <div class="flex items-center space-x-2 px-6 py-5 border-b border-gray-700">
+            <div class="bg-white p-1 rounded-md">
+              <img src="/static/uploads/ce.png" alt="Logo" class="h-8">
+            </div>
+            <span class="font-bold text-white text-lg">CertEasy</span>
+          </div>
+          <nav class="mt-6 flex flex-col space-y-1 px-3 text-sm">
+            <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-chart-line mr-3 text-green-300"></i> Overview
+            </a>
+            <a href="{% url 'mycertifications' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-graduation-cap mr-3 text-green-300"></i> My Certifications
+            </a>
+            <a href="{% url 'resources' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-book mr-3 text-green-300"></i> Resources
+            </a>
+            <a href="{% url 'flashcards' %}" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active text-white font-medium">
+              <i class="fas fa-brain mr-3 text-green-300"></i> Flashcards
+            </a>
+            <a href="{% url 'quizzes' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-clipboard-check mr-3 text-green-300"></i> Quizzes
+            </a>
+            <a href="/discussions/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-comments mr-3 text-green-300"></i> Community
+            </a>
+            <a href="/settings/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-cog mr-3 text-green-300"></i> Settings
+            </a>
+            <a href="/support/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-life-ring mr-3 text-green-300"></i> Support
+            </a>
+          </nav>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50">
+      <!-- Top bar -->
+      <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+        <div class="flex items-center space-x-4 lg:hidden">
+          <button @click="sidebarOpen = !sidebarOpen" class="text-gray-700 focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <span class="font-semibold text-lg">Create Flashcard</span>
+        </div>
+
+        <div class="flex-1 flex justify-end items-center space-x-4">
+          <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
+              <div class="relative">
+                <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=10B981&color=fff" class="w-9 h-9 rounded-full border-2 border-green-100" alt="User avatar">
+                <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+              </div>
+              <span class="text-sm font-medium text-gray-700 hidden md:inline">{{ user.get_full_name|default:user.username|title }}</span>
+              <i class="fas fa-chevron-down text-xs text-gray-500 hidden md:inline"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <div class="max-w-3xl mx-auto">
+          <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Create New Flashcard</h1>
+            <p class="text-gray-600 text-sm mt-1">Add a new flashcard to your study materials</p>
+          </div>
+
+          <form id="createFlashcardForm" class="bg-white rounded-lg shadow-sm p-6">
+            <div class="space-y-6">
+              <!-- Certification Selection -->
+              <div>
+                <label for="certification" class="block text-sm font-medium text-gray-700 mb-1">Certification</label>
+                <select id="certification" name="certification" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                  <option value="">Select a certification</option>
+                  {% for cert in certifications %}
+                  <option value="{{ cert.id }}">{{ cert.title }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Front Text -->
+              <div>
+                <label for="front_text" class="block text-sm font-medium text-gray-700 mb-1">Front Text (Question)</label>
+                <textarea id="front_text" name="front_text" rows="3" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" placeholder="Enter the question or term..."></textarea>
+              </div>
+
+              <!-- Back Text -->
+              <div>
+                <label for="back_text" class="block text-sm font-medium text-gray-700 mb-1">Back Text (Answer)</label>
+                <textarea id="back_text" name="back_text" rows="3" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" placeholder="Enter the answer or definition..."></textarea>
+              </div>
+
+              <!-- Topic -->
+              <div>
+                <label for="topic" class="block text-sm font-medium text-gray-700 mb-1">Topic (Optional)</label>
+                <input type="text" id="topic" name="topic" class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" placeholder="e.g., Security, Networking, etc.">
+              </div>
+
+              <!-- Submit Button -->
+              <div class="flex justify-end space-x-4">
+                <a href="{% url 'flashcards' %}" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                  Cancel
+                </a>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white text-sm rounded-md font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                  Create Flashcard
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('createFlashcardForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+
+      fetch('{% url "create_flashcard" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken')
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = '{% url "flashcards" %}';
+        } else {
+          alert(data.message || 'An error occurred while creating the flashcard.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while creating the flashcard.');
+      });
+    });
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  </script>
+</body>
+</html>

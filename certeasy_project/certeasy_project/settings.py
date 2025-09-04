@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'flashcards',
     'quizzes',
     'discussions',
+    'study_plans',
 ]
 
 SITE_ID = 1
@@ -172,3 +173,9 @@ ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.CaseInsensitiveModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]

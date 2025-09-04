@@ -155,29 +155,23 @@
             <span class="font-bold text-white text-lg">CertEasy</span>
           </div>
           <nav class="mt-6 flex flex-col space-y-1 px-3 text-sm">
-            <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+            <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded text-white font-medium">
               <i class="fas fa-chart-line mr-3 text-green-300"></i> Overview
             </a>
-            <a href="{% url 'mycertifications' %}" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active text-white font-medium">
+            <a href="{% url 'mycertifications' %}" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active hover:bg-gray-800/50">
               <i class="fas fa-graduation-cap mr-3 text-green-300"></i> My Certifications
             </a>
             <a href="{% url 'resources' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-book mr-3 text-green-300"></i> Resources
             </a>
-            <a href="/flashcards/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+            <a href="{% url 'flashcards' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-brain mr-3 text-green-300"></i> Flashcards
             </a>
-            <a href="/quizzes/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+            <a href="{% url 'quizzes' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-clipboard-check mr-3 text-green-300"></i> Quizzes
             </a>
-            <a href="/discussions/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+            <a href="{% url 'discussions' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-comments mr-3 text-green-300"></i> Community
-            </a>
-            <a href="/settings/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
-              <i class="fas fa-cog mr-3 text-green-300"></i> Settings
-            </a>
-            <a href="/support/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
-              <i class="fas fa-life-ring mr-3 text-green-300"></i> Support
             </a>
           </nav>
         </div>
@@ -209,100 +203,36 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
           </button>
-          <span class="font-semibold text-lg">Certifications</span>
-        </div>
+            <span class="font-semibold text-lg">My Certifcations</span>
+          </div>
 
         <div class="hidden lg:block">
-          <div class="relative">
-            <input type="text" placeholder="Search certifications, resources..." class="w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500">
-            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-          </div>
+          <span class="text-2xl font-bold text-gray-800 tracking-tight">My Certifications</span>
         </div>
 
         <div class="flex-1 flex justify-end items-center space-x-4">
-          <a href="/calendar/" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
-            <i class="fas fa-calendar-alt"></i>
-          </a>
-
-          <div class="relative" x-data="{ open: false }">
-            <button @click="notifyOpen = !notifyOpen" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
-              <i class="fas fa-bell"></i>
-              <span class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-pink-500 rounded-full">3</span>
-            </button>
-            <div x-show="notifyOpen" @click.away="notifyOpen = false" x-transition class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-100">
-              <div class="p-4 border-b font-semibold text-gray-700 flex justify-between items-center">
-                <span>Notifications</span>
-                <span class="text-xs text-green-600 cursor-pointer hover:underline">Mark all as read</span>
-              </div>
-              <ul class="text-sm text-gray-600 max-h-72 overflow-y-auto">
-                <li class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
-                  <div class="flex items-start">
-                    <div class="bg-green-100 rounded-full p-2 mr-3">
-                      <i class="fas fa-book-open text-green-600 text-sm"></i>
-                    </div>
-                    <div>
-                      <p class="font-medium">New flashcards added for GRE</p>
-                      <p class="text-xs text-gray-500 mt-1">2 hours ago</p>
-                    </div>
-                  </div>
-                </li>
-                <li class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
-                  <div class="flex items-start">
-                    <div class="bg-blue-100 rounded-full p-2 mr-3">
-                      <i class="fas fa-calendar text-blue-600 text-sm"></i>
-                    </div>
-                    <div>
-                      <p class="font-medium">CFA Level I exam schedule released</p>
-                      <p class="text-xs text-gray-500 mt-1">Yesterday</p>
-                    </div>
-                  </div>
-                </li>
-                <li class="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                  <div class="flex items-start">
-                    <div class="bg-purple-100 rounded-full p-2 mr-3">
-                      <i class="fas fa-users text-purple-600 text-sm"></i>
-                    </div>
-                    <div>
-                      <p class="font-medium">Join your study room now</p>
-                      <p class="text-xs text-gray-500 mt-1">2 days ago</p>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-              <div class="p-3 text-center border-t border-gray-100">
-                <a href="/notifications" class="text-sm text-green-600 hover:underline">View all notifications</a>
-              </div>
-            </div>
-          </div>
+          {% include 'partials/notification_dropdown.html' %}
 
           <div class="relative" x-data="{ open: false }">
             <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
               <div class="relative">
-                <img src="https://ui-avatars.com/api/?name=User&background=10B981&color=fff" class="w-9 h-9 rounded-full border-2 border-green-100" alt="User avatar">
+                <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=10B981&color=fff" class="w-9 h-9 rounded-full border-2 border-green-100" alt="User avatar">
                 <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
               </div>
-              <span class="text-sm font-medium text-gray-700 hidden md:inline">Learner</span>
+              <span class="text-sm font-medium text-gray-700 hidden md:inline">{{ user.get_full_name|default:user.username|title }}</span>
               <i class="fas fa-chevron-down text-xs text-gray-500 hidden md:inline"></i>
             </button>
             <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100">
               <div class="px-4 py-3 border-b border-gray-100">
-                <p class="text-sm font-semibold">Learner</p>
-                <p class="text-xs text-gray-500">learner@example.com</p>
+                <p class="text-sm font-semibold">{{ user.get_full_name|default:user.username|title }}</p>
+                <p class="text-xs text-gray-500">{{ user.email }}</p>
               </div>
               <a href="/profile/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                 <i class="fas fa-user mr-3 text-gray-400 w-5"></i>
                 Profile
               </a>
-              <a href="/settings/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <i class="fas fa-cog mr-3 text-gray-400 w-5"></i>
-                Settings
-              </a>
-              <a href="/help/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <i class="fas fa-question-circle mr-3 text-gray-400 w-5"></i>
-                Help Center
-              </a>
               <div class="border-t border-gray-100 mt-2"></div>
-              <a href="/account_logout/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+              <a href="{% url 'account_logout' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                 <i class="fas fa-sign-out-alt mr-3 text-gray-400 w-5"></i>
                 Logout
               </a>
@@ -317,63 +247,6 @@
             <h1 class="text-2xl font-bold text-gray-900">My Certifications</h1>
             <p class="text-gray-600 mt-1">Track your progress and explore new certification paths</p>
           </div>
-          <div class="mt-4 md:mt-0 flex space-x-3">
-            <button @click="filterOpen = !filterOpen" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium flex items-center hover:bg-gray-50 transition-colors">
-              <i class="fas fa-filter mr-2 text-gray-500"></i> Filter
-            </button>
-            <button class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center">
-              <i class="fas fa-plus mr-2"></i> Add Certification
-            </button>
-          </div>
-        </div>
-
-        <!-- Filter Panel -->
-        <div x-show="filterOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" class="mb-8 bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-          <div class="flex flex-wrap justify-between items-center mb-4">
-            <h3 class="text-lg font-medium text-gray-800">Filter Certifications</h3>
-            <button @click="filterOpen = false" class="text-gray-400 hover:text-gray-600">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Categories</label>
-              <div class="flex flex-wrap gap-2">
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip filter-chip-active cursor-pointer">All</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Finance</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Medical</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Graduate</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Law</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">IT</span>
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Progress</label>
-              <div class="flex flex-wrap gap-2">
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip filter-chip-active cursor-pointer">All</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">In Progress</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Not Started</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Completed</span>
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
-              <div class="flex flex-wrap gap-2">
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip filter-chip-active cursor-pointer">All</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Beginner</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Intermediate</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm filter-chip cursor-pointer">Advanced</span>
-              </div>
-            </div>
-          </div>
-          <div class="flex justify-end mt-4">
-            <button class="px-4 py-1 text-sm text-gray-600 hover:text-gray-800 mr-3">
-              Reset Filters
-            </button>
-            <button class="px-4 py-1 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 transition-colors">
-              Apply Filters
-            </button>
-          </div>
         </div>
 
         <!-- My Active Certifications -->
@@ -386,7 +259,7 @@
                 <div class="flex justify-between items-start mb-4">
                   <div class="flex items-center">
                     <div class="bg-green-100 p-3 rounded-lg">
-                      <i class="fas fa-graduation-cap text-green-600"></i>
+                      <img src="{% if cert.image %}{{ cert.image.url }}{% else %}/static/placeholders/default-cert.png{% endif %}" alt="{{ cert.title }}" class="w-14 h-14 object-cover rounded-lg border border-gray-200" />
                     </div>
                     <div class="ml-3">
                       <h4 class="font-semibold text-gray-800">{{ cert.title }}</h4>
@@ -401,10 +274,10 @@
                 <div class="mb-4">
                   <div class="flex justify-between items-center mb-1">
                     <span class="text-xs font-medium text-gray-700">Overall Progress</span>
-                    <span class="text-xs font-medium text-gray-700">{{ cert.progress }}%</span>
+                    <span class="text-xs font-medium text-gray-700">{{ cert.progress|default:0|floatformat:1 }}%</span>
                   </div>
                   <div class="w-full h-2 bg-gray-100 rounded-full">
-                    <div class="h-full rounded-full bg-green-600" style="width: {{ cert.progress }}%"></div>
+                    <div class="h-full rounded-full bg-green-600" style="width: {{ cert.progress|default:0|floatformat:0 }}%;"></div>
                   </div>
                 </div>
 
@@ -422,7 +295,7 @@
                     <span class="text-xs text-gray-500">Students</span>
                     <p class="text-xs font-medium text-gray-800">{{ cert.students }}</p>
                   </div>
-                  <a href="/certifications/{{ cert.id }}/" class="text-green-600 hover:text-green-700 text-sm font-medium flex items-center">
+                  <a href="{% url 'resources' %}" class="text-green-600 hover:text-green-700 text-sm font-medium flex items-center">
                     Continue <i class="fas fa-arrow-right ml-1 text-xs"></i>
                   </a>
                 </div>
@@ -447,56 +320,59 @@
         </div>
 
         <!-- Recommended Certifications -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-8 animate-fade-in-up animate-delay-1">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-8 animate-fade-in-up animate-delay-1" x-data="{ showAll: false }">
           <div class="flex justify-between items-center mb-5">
             <h3 class="text-lg font-semibold text-gray-900">Recommended for You</h3>
-            <a href="/certifications/explore" class="text-sm text-green-600 hover:text-green-700 font-medium">View All</a>
+            <button @click="showAll = !showAll" type="button" class="text-sm text-green-600 hover:text-green-700 font-medium focus:outline-none">
+              <span x-show="!showAll">View All</span>
+              <span x-show="showAll">Show Less</span>
+            </button>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% if all_certifications %}
-              {% for cert in all_certifications|slice:":3" %}
-              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all">
-                <div class="flex justify-between items-start mb-4">
-                  <div class="flex items-center">
-                    <div class="bg-green-100 p-3 rounded-lg">
-                      <i class="fas fa-graduation-cap text-green-600"></i>
+              {% for cert in all_certifications %}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all"
+                     data-index="{{ forloop.counter0 }}"
+                     x-show="showAll || Number($el.dataset.index) < 3"
+                     x-transition>
+                  <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center">
+                      <div class="bg-green-100 p-3 rounded-lg">
+                        <img src="{% if cert.image %}{{ cert.image.url }}{% else %}/static/placeholders/default-cert.png{% endif %}" alt="{{ cert.title }}" class="w-14 h-14 object-cover rounded-lg border border-gray-200" />
+                      </div>
+                      <div class="ml-3">
+                        <h4 class="font-semibold text-gray-800">{{ cert.title }}</h4>
+                        <p class="text-xs text-gray-500">{{ cert.description|truncatechars:30 }}</p>
+                      </div>
                     </div>
-                    <div class="ml-3">
-                      <h4 class="font-semibold text-gray-800">{{ cert.title }}</h4>
-                      <p class="text-xs text-gray-500">{{ cert.description|truncatechars:30 }}</p>
+                    <div class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
+                      {{ cert.category }}
                     </div>
                   </div>
-                  <div class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
-                    {{ cert.category }}
+                  <p class="text-sm text-gray-600 mb-4">{{ cert.description|truncatechars:100 }}</p>
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                      <i class="fas fa-star text-yellow-400 text-xs"></i>
+                      <i class="fas fa-star text-yellow-400 text-xs"></i>
+                      <i class="fas fa-star text-yellow-400 text-xs"></i>
+                      <i class="fas fa-star text-yellow-400 text-xs"></i>
+                      <i class="fas fa-star text-gray-300 text-xs"></i>
+                      <span class="text-xs text-gray-500 ml-1">(4.2)</span>
+                    </div>
+                    <span class="text-xs flex items-center text-gray-500">
+                      <i class="fas fa-users text-gray-400 mr-1"></i> {{ cert.students }}+ students
+                    </span>
+                  </div>
+                  <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+                    <div class="flex items-center">
+                      <i class="fas fa-clock text-gray-400 mr-1 text-xs"></i>
+                      <span class="text-xs text-gray-500">3-6 months</span>
+                    </div>
+                    <a href="{% url 'certification_view' cert.id %}" class="px-3 py-1 bg-green-600 text-white rounded-md text-xs font-medium hover:bg-green-700 transition-colors">
+                      Start Prep
+                    </a>
                   </div>
                 </div>
-
-                <p class="text-sm text-gray-600 mb-4">{{ cert.description|truncatechars:100 }}</p>
-
-                <div class="flex items-center justify-between mb-3">
-                  <div class="flex items-center">
-                    <i class="fas fa-star text-yellow-400 text-xs"></i>
-                    <i class="fas fa-star text-yellow-400 text-xs"></i>
-                    <i class="fas fa-star text-yellow-400 text-xs"></i>
-                    <i class="fas fa-star text-yellow-400 text-xs"></i>
-                    <i class="fas fa-star text-gray-300 text-xs"></i>
-                    <span class="text-xs text-gray-500 ml-1">(4.2)</span>
-                  </div>
-                  <span class="text-xs flex items-center text-gray-500">
-                    <i class="fas fa-users text-gray-400 mr-1"></i> {{ cert.students }}+ students
-                  </span>
-                </div>
-
-                <div class="flex justify-between items-center pt-3 border-t border-gray-100">
-                  <div class="flex items-center">
-                    <i class="fas fa-clock text-gray-400 mr-1 text-xs"></i>
-                    <span class="text-xs text-gray-500">3-6 months</span>
-                  </div>
-                  <a href="/certifications/{{ cert.id }}/" class="px-3 py-1 bg-green-600 text-white rounded-md text-xs font-medium hover:bg-green-700 transition-colors">
-                    Start Prep
-                  </a>
-                </div>
-              </div>
               {% endfor %}
             {% else %}
               <div class="col-span-full text-center py-8">
@@ -512,115 +388,28 @@
           </div>
         </div>
 
-        <!-- Study Statistics -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-8 animate-fade-in-up animate-delay-2">
-          <h3 class="text-lg font-semibold text-gray-900 mb-5">My Study Statistics</h3>
+        <!-- Study Statistics
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Study Time Chart -->
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
-              <h4 class="text-sm font-medium text-gray-700 mb-4">Weekly Study Hours</h4>
-              <canvas id="studyTimeChart" height="200"></canvas>
-            </div>
-
-            <!-- Performance Chart -->
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
-              <h4 class="text-sm font-medium text-gray-700 mb-4">Performance by Subject</h4>
-              <canvas id="performanceChart" height="200"></canvas>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
-              <h5 class="text-sm font-medium text-blue-700 mb-1">Study Streak</h5>
-              <div class="flex items-end">
-                <span class="text-2xl font-bold text-blue-800">14</span>
-                <span class="text-xs text-blue-600 ml-1 mb-1">days</span>
-              </div>
-              <p class="text-xs text-blue-600 mt-1">4 days to new record!</p>
-            </div>
-
-            <div class="bg-green-50 p-4 rounded-lg border border-green-100">
-              <h5 class="text-sm font-medium text-green-700 mb-1">Quiz Success Rate</h5>
-              <div class="flex items-end">
-                <span class="text-2xl font-bold text-green-800">76%</span>
-                <span class="text-xs text-green-600 ml-1 mb-1">average</span>
-              </div>
-              <p class="text-xs text-green-600 mt-1">↑ 3% from last week</p>
-            </div>
-
-            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
-              <h5 class="text-sm font-medium text-purple-700 mb-1">Flashcards Mastered</h5>
-              <div class="flex items-end">
-                <span class="text-2xl font-bold text-purple-800">248</span>
-                <span class="text-xs text-purple-600 ml-1 mb-1">cards</span>
-              </div>
-              <p class="text-xs text-purple-600 mt-1">62% of total</p>
-            </div>
-
-            <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
-              <h5 class="text-sm font-medium text-amber-700 mb-1">Practice Tests</h5>
-              <div class="flex items-end">
-                <span class="text-2xl font-bold text-amber-800">7</span>
-                <span class="text-xs text-amber-600 ml-1 mb-1">completed</span>
-              </div>
-              <p class="text-xs text-amber-600 mt-1">Next test: May 12</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 animate-fade-in-up animate-delay-3">
-          <div class="flex justify-between items-center mb-5">
-            <h3 class="text-lg font-semibold text-gray-900">Recent Activity</h3>
-            <a href="/activity/" class="text-sm text-green-600 hover:text-green-700 font-medium">View All</a>
-          </div>
-
-          <div class="space-y-4">
-            <div class="flex items-start p-3 hover:bg-gray-50 rounded-lg transition-colors">
-              <div class="bg-blue-100 p-2 rounded-lg">
-                <i class="fas fa-clipboard-check text-blue-600"></i>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-gray-800">Completed GRE Verbal Practice Test #4</p>
-                <p class="text-xs text-gray-500 mt-1">Score: 162/170 • Yesterday at 3:45 PM</p>
-              </div>
-            </div>
-
-            <div class="flex items-start p-3 hover:bg-gray-50 rounded-lg transition-colors">
-              <div class="bg-green-100 p-2 rounded-lg">
-                <i class="fas fa-book-open text-green-600"></i>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-gray-800">Studied 45 flashcards for CFA Ethics</p>
-                <p class="text-xs text-gray-500 mt-1">30 correct • 2 days ago</p>
-              </div>
-            </div>
-
-            <div class="flex items-start p-3 hover:bg-gray-50 rounded-lg transition-colors">
-              <div class="bg-purple-100 p-2 rounded-lg">
-                <i class="fas fa-users text-purple-600"></i>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-gray-800">Joined LSAT Study Group</p>
-                <p class="text-xs text-gray-500 mt-1">With 8 other students • 3 days ago</p>
-              </div>
-            </div>
-
-            <div class="flex items-start p-3 hover:bg-gray-50 rounded-lg transition-colors">
-              <div class="bg-amber-100 p-2 rounded-lg">
-                <i class="fas fa-calendar-check text-amber-600"></i>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-gray-800">Scheduled GRE exam date</p>
-                <p class="text-xs text-gray-500 mt-1">June 15, 2025 • 4 days ago</p>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
+      <footer class="bg-white border-t border-gray-200 py-4 px-6 text-center text-sm text-gray-500">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-2 md:mb-0">
+                        <span>© 2025 CertEasy. All rights reserved.</span>
+                    </div>
+                    <div class="flex space-x-4">
+                        <a href="/terms/" class="hover:text-green-600">Terms</a>
+                        <a href="/privacy/" class="hover:text-green-600">Privacy</a>
+                        <a href="/help/" class="hover:text-green-600">Help</a>
+                        <a href="/contact/" class="hover:text-green-600">Contact</a>
+                    </div>
+                </div>
+            </footer>
     </div>
   </div>
+
+  <!-- Add this before your script -->
+  <script id="weekly-study-data" type="application/json">{{ weekly_study|json_script:"weekly-study-data" }}</script>
 
   <script>
     // Initialize Study Time Chart
@@ -725,6 +514,78 @@
         ]
       }))
     })
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const chartContainer = document.getElementById('studyCharts');
+      const weeklyStudyData = JSON.parse(document.getElementById('weekly-study-data').textContent);
+      if (!chartContainer) return;
+      if (!Object.keys(weeklyStudyData).length) {
+        chartContainer.innerHTML = '<div class="text-gray-400 text-center py-8">No study data available for this week.</div>';
+        return;
+      }
+      let chartCount = 0;
+      Object.values(weeklyStudyData).forEach(cert => {
+        // Only show chart if there is data for at least one day
+        const hasData = cert.days.some(day => day.resources > 0 || day.quizzes > 0);
+        if (!hasData) return;
+        // Create a canvas for each certification
+        const canvas = document.createElement('canvas');
+        canvas.id = 'studyTimeChart_' + chartCount;
+        canvas.height = 200;
+        chartContainer.appendChild(document.createElement('hr'));
+        const title = document.createElement('h5');
+        title.className = 'text-base font-semibold text-gray-800 mb-2 mt-4';
+        title.textContent = cert.title;
+        chartContainer.appendChild(title);
+        chartContainer.appendChild(canvas);
+        // Prepare data
+        const labels = cert.days.map(day => day.date.slice(5));
+        const videoMinutes = cert.days.map(day => day.resources);
+        const quizMinutes = cert.days.map(day => day.quizzes);
+        // Chart.js stacked bar
+        if (canvas) {
+          new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: 'Video Minutes',
+                  data: videoMinutes,
+                  backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                  stack: 'study',
+                },
+                {
+                  label: 'Quiz Minutes',
+                  data: quizMinutes,
+                  backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                  stack: 'study',
+                },
+              ]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: 'top' },
+                title: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      return `${context.dataset.label}: ${context.parsed.y} min`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Minutes' } }
+              }
+            }
+          });
+        }
+        chartCount++;
+      });
+    });
   </script>
 </body>
 </html>

@@ -5,7 +5,8 @@
     notifyOpen: false,
     notifications: {{ notifications|safe }},
     stats: {{ user_stats|safe }},
-    studyPlan: {{ study_plan|safe }}
+    studyPlan: {{ study_plan|safe }},
+    studyPlanModal: studyPlanModal()
 }" class="h-full bg-gray-50">
 <head>
   <meta charset="UTF-8" />
@@ -15,6 +16,7 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  {% csrf_token %}
 </head>
 <style>
   @keyframes fade-in-up {
@@ -28,33 +30,93 @@
     }
   }
 
-  .animate-fade-in-up {
-    animation: fade-in-up 0.5s ease-out forwards;
-  }
-
-  @keyframes pulse-subtle {
-    0%, 100% {
+  @keyframes scale-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    100% {
       opacity: 1;
-    }
-    50% {
-      opacity: 0.8;
+      transform: scale(1);
     }
   }
 
-  .animate-pulse-subtle {
-    animation: pulse-subtle 2s infinite;
+  @keyframes slide-in-right {
+    0% {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 
-  .animate-delay-1 {
-    animation-delay: 0.2s;
+  .animate-fade-in-up {
+    animation: fade-in-up 0.9s ease-out forwards;
   }
 
-  .animate-delay-2 {
-    animation-delay: 0.4s;
+  .animate-scale-in {
+    animation: scale-in 0.5s ease-out forwards;
   }
 
-  .animate-delay-3 {
-    animation-delay: 0.6s;
+  .animate-slide-in-right {
+    animation: slide-in-right 0.5s ease-out forwards;
+  }
+
+  .calendar-day {
+    transition: all 0.2s ease;
+  }
+
+  .calendar-day:hover {
+    transform: scale(1.1);
+    background-color: #10B981;
+    color: white;
+  }
+
+  .calendar-day.selected {
+    background-color: #10B981;
+    color: white;
+    transform: scale(1.1);
+  }
+
+  .calendar-day.has-events {
+    position: relative;
+  }
+
+  .calendar-day.has-events::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background-color: #10B981;
+    border-radius: 50%;
+  }
+
+  .time-slot {
+    transition: all 0.2s ease;
+  }
+
+  .time-slot:hover {
+    background-color: #10B981;
+    color: white;
+    transform: translateX(5px);
+  }
+
+  .time-slot.selected {
+    background-color: #10B981;
+    color: white;
+  }
+
+  .modal-content {
+    animation: scale-in 0.3s ease-out forwards;
+  }
+
+  .form-step {
+    animation: slide-in-right 0.3s ease-out forwards;
   }
 
   .shadow-inner {
@@ -133,6 +195,20 @@
     opacity: 0;
     transition: all 0.5s ease;
   }
+
+  .notification-item.read {
+    background-color: #f3f4f6 !important; /* Tailwind's bg-gray-100 */
+    color: #9ca3af !important; /* Tailwind's text-gray-400 */
+    font-weight: normal;
+  }
+
+  .notification-item.read a,
+  .notification-item.read .font-medium {
+    color: #9ca3af !important;
+    text-decoration: none;
+    pointer-events: none;
+    cursor: default;
+  }
 </style>
 
 <body class="h-screen overflow-hidden font-sans">
@@ -166,12 +242,6 @@
             </a>
             <a href="{% url 'discussions' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-comments mr-3 text-green-300"></i> Community
-            </a>
-            <a href="/settings/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
-              <i class="fas fa-cog mr-3 text-green-300"></i> Settings
-            </a>
-            <a href="/support/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
-              <i class="fas fa-life-ring mr-3 text-green-300"></i> Support
             </a>
           </nav>
         </div>
@@ -207,47 +277,11 @@
         </div>
 
         <div class="hidden lg:block">
-          <div class="relative">
-            <input type="text" placeholder="Search certifications, resources..." class="w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500">
-            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-          </div>
+          <span class="text-2xl font-bold text-gray-800 tracking-tight">Dashboard</span>
         </div>
 
           <div class="flex-1 flex justify-end items-center space-x-4">
-          <a href="/calendar/" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
-            <i class="fas fa-calendar-alt"></i>
-          </a>
-
-          <div class="relative" x-data="{ open: false }">
-            <button @click="notifyOpen = !notifyOpen" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
-              <i class="fas fa-bell"></i>
-              <span x-show="notifications.length > 0" class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-pink-500 rounded-full" x-text="notifications.length"></span>
-            </button>
-            <div x-show="notifyOpen" @click.away="notifyOpen = false" x-transition class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-100">
-              <div class="p-4 border-b font-semibold text-gray-700 flex justify-between items-center">
-                <span>Notifications</span>
-                <span class="text-xs text-green-600 cursor-pointer hover:underline">Mark all as read</span>
-              </div>
-              <ul class="text-sm text-gray-600 max-h-72 overflow-y-auto">
-                <template x-for="notification in notifications" :key="notification.id">
-                  <li class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer notification-item" :data-id="notification.id">
-                    <div class="flex items-start">
-                      <div :class="notification.type === 'resource' ? 'bg-green-100' : notification.type === 'calendar' ? 'bg-blue-100' : 'bg-purple-100'" class="rounded-full p-2 mr-3">
-                        <i :class="'fas fa-' + notification.icon + ' ' + (notification.type === 'resource' ? 'text-green-600' : notification.type === 'calendar' ? 'text-blue-600' : 'text-purple-600') + ' text-sm'"></i>
-                      </div>
-                      <div>
-                        <p class="font-medium" x-text="notification.title"></p>
-                        <p class="text-xs text-gray-500 mt-1" x-text="notification.time"></p>
-                      </div>
-                    </div>
-                  </li>
-                </template>
-              </ul>
-              <div class="p-3 text-center border-t border-gray-100">
-                <a href="/notifications" class="text-sm text-green-600 hover:underline">View all notifications</a>
-              </div>
-            </div>
-          </div>
+            {% include 'partials/notification_dropdown.html' %}
 
           <div class="relative" x-data="{ open: false }">
             <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
@@ -267,16 +301,8 @@
                 <i class="fas fa-user mr-3 text-gray-400 w-5"></i>
                 Profile
               </a>
-              <a href="/settings/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <i class="fas fa-cog mr-3 text-gray-400 w-5"></i>
-                Settings
-              </a>
-              <a href="/help/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <i class="fas fa-question-circle mr-3 text-gray-400 w-5"></i>
-                Help Center
-              </a>
               <div class="border-t border-gray-100 mt-2"></div>
-              <a href="/account_logout/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+              <a href="{% url 'account_logout' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                 <i class="fas fa-sign-out-alt mr-3 text-gray-400 w-5"></i>
                 Logout
               </a>
@@ -287,28 +313,27 @@
       {% block content %}
 
       <main class="p-6 lg:p-10 bg-gray-50 text-gray-800 font-sans">
-        <!-- Greeting & Summary Cards -->
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
           <div class="lg:col-span-1">
             <div class="bg-gradient-to-br from-green-600 to-green-700 rounded-lg p-6 text-white animate-fade-in-up shadow-lg h-full flex flex-col justify-between">
               <div>
-                <h1 class="text-2xl font-bold mb-1">Welcome back, {{ user.get_full_name|default:user.username|title }}</h1>
+                <h1 class="text-2xl font-bold mb-1">Welcome, {{ user.get_full_name|default:user.username|title }}</h1>
                 <p class="text-green-200 mb-4">Let's achieve your certification goals!</p>
 
                 <div class="mt-4">
                   <span class="text-xs font-medium text-green-200">OVERALL PROGRESS</span>
                   <div class="w-full h-2 bg-green-800/50 rounded-full mt-2">
-                    <div class="h-full bg-white rounded-full" :style="`width: ${stats.overall_progress}%`"></div>
+                    <div class="h-full bg-white rounded-full" :style="`width: ${stats.overall_progress || 0}%`"></div>
                   </div>
                   <div class="flex justify-between mt-1">
-                    <span class="text-xs text-green-200" x-text="`${stats.overall_progress}% Complete`"></span>
-                    <span class="text-xs text-green-200">Target: 85%</span>
+                    <span class="text-xs text-green-200" x-text="`${stats.overall_progress || 0}% Complete`"></span>
+                    <span class="text-xs text-green-200">Target: 100%</span>
                   </div>
                 </div>
               </div>
 
               <button class="mt-6 w-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors text-white py-2 rounded-lg font-medium text-sm flex items-center justify-center">
-                <i class="fas fa-play-circle mr-2"></i> Continue Learning
+                <a href="{% url 'resources' %}"><i> <class="fas fa-play-circle mr-2"></i> Continue Learning</a>
               </button>
             </div>
           </div>
@@ -325,9 +350,9 @@
               <p class="text-sm text-gray-500 mt-1">Scheduled for today</p>
               <div class="mt-4 flex items-center">
                 <div class="w-full h-1.5 bg-gray-100 rounded-full">
-                  <div class="h-full rounded-full progress-gradient" :style="`width: ${(stats.tasks_completed / stats.tasks_total * 100)}%`"></div>
+                  <div class="h-full rounded-full progress-gradient" :style="`width: ${stats.tasks_total > 0 ? (stats.tasks_completed / stats.tasks_total * 100) : 0}%`"></div>
                 </div>
-                <span class="ml-2 text-xs font-medium text-gray-500" x-text="`${Math.round(stats.tasks_completed / stats.tasks_total * 100)}%`"></span>
+                <span class="ml-2 text-xs font-medium text-gray-500" x-text="stats.tasks_total > 0 ? Math.round(stats.tasks_completed / stats.tasks_total * 100) + '%' : '0%' "></span>
               </div>
             </div>
 
@@ -364,10 +389,13 @@
         </div>
 
         <!-- Study Plan Timeline -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-8 animate-fade-in-up">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-8 animate-fade-in-up" x-data="studyPlanTimeline()">
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-semibold text-gray-900">Your Study Plan</h3>
             <div class="flex space-x-2">
+              <button @click="studyPlanModal.openStudyPlanModal()" class="px-4 py-2 bg-green-600 text-white text-sm rounded-md font-medium hover:bg-green-700 transition-colors flex items-center">
+                <i class="fas fa-plus mr-2"></i> Create Study Plan
+              </button>
               <button class="px-3 py-1 text-xs font-medium text-green-600 border border-green-200 rounded-md hover:bg-green-50 transition-colors">
                 Today
               </button>
@@ -379,11 +407,9 @@
               </button>
             </div>
           </div>
-
           <div class="relative">
             <!-- Timeline line -->
             <div class="absolute left-16 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-
             <!-- Timeline items -->
             <div class="space-y-6">
               <template x-for="task in studyPlan" :key="task.id">
@@ -423,52 +449,51 @@
                   </div>
                 </div>
               </template>
+              <template x-if="studyPlan.length === 0">
+                <div class="text-gray-400 text-center py-8">No study plan for today.</div>
+              </template>
             </div>
           </div>
         </div>
 
-        <!-- Certification Paths (Enhanced Slider) -->
         <div class="mt-10 animate-fade-in-up relative">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-semibold text-gray-900">Choose Your Certification Path</h3>
+            <h3 class="text-xl font-semibold text-gray-900">Explore Available Certifications</h3>
             <a href="/certifications/" class="text-sm text-green-600 hover:underline font-medium flex items-center">
               View All <i class="fas fa-arrow-right text-xs ml-1"></i>
             </a>
           </div>
+
           <button
             onclick="document.getElementById('cert-slider').scrollBy({ left: -300, behavior: 'smooth' })"
             class="absolute left-0 top-1/2 z-10 p-2 bg-white rounded-full shadow hover:bg-gray-100 focus:outline-none border border-gray-200"
             style="transform: translateY(-50%);">
             <i class="fas fa-chevron-left text-gray-600"></i>
           </button>
+
           <div id="cert-slider" class="overflow-x-auto whitespace-nowrap scrollbar-hide flex space-x-4 pb-4">
             {% for cert in certifications %}
-            <div class="inline-block w-72 bg-white rounded-xl shadow-sm border border-gray-100 p-5 cert-card">
-              <div class="relative mb-4">
-                <img src="{{ cert.image_url }}" alt="{{ cert.title }}" class="w-full h-36 object-cover rounded-lg">
-                <div class="absolute top-3 right-3 bg-white/80 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-medium text-green-600">
-                  {{ cert.category }}
-                </div>
-              </div>
-              <h4 class="text-lg font-semibold">{{ cert.title }}</h4>
-              <p class="text-sm text-gray-500 mt-1">{{ cert.description }}</p>
-              <div class="flex items-center mt-3">
-                <div class="flex-1">
-                  <div class="w-full h-1.5 bg-gray-100 rounded-full">
-                    <div class="h-full rounded-full bg-green-600" style="width: {{ cert.progress }}%"></div>
+              {% if not cert.is_active %}
+              <div class="inline-block w-72 bg-white rounded-xl shadow-sm border border-gray-100 p-5 cert-card">
+                <div class="relative mb-4">
+                  <img src="{{ cert.image_url }}" alt="{{ cert.title }}" class="w-full h-36 object-cover rounded-lg">
+                  <div class="absolute top-3 right-3 bg-white/80 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-medium text-green-600">
+                    {{ cert.category }}
                   </div>
                 </div>
-                <span class="ml-2 text-xs font-medium text-gray-500">{{ cert.progress }}%</span>
+                <h4 class="text-lg font-semibold">{{ cert.title }}</h4>
+                <p class="text-sm text-gray-500 mt-1">{{ cert.description }}</p>
+                <div class="mt-4 flex justify-between items-center">
+                  <span class="text-xs text-gray-500">{{ cert.students }} students</span>
+                  <a href="{% url 'certification_view' cert.id %}" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md font-medium hover:bg-blue-700 transition-colors">
+                    Subscribe
+                  </a>
+                </div>
               </div>
-              <div class="mt-4 flex justify-between items-center">
-                <span class="text-xs text-gray-500">{{ cert.students }} students</span>
-                <a href="{% url 'certification_detail' cert.id %}" class="px-3 py-1.5 bg-green-600 text-white text-sm rounded-md font-medium hover:bg-green-700 transition-colors">
-                  Explore
-                </a>
-              </div>
-            </div>
+              {% endif %}
             {% endfor %}
           </div>
+
           <button
             onclick="document.getElementById('cert-slider').scrollBy({ left: 300, behavior: 'smooth' })"
             class="absolute right-0 top-1/2 z-10 p-2 bg-white rounded-full shadow hover:bg-gray-100 focus:outline-none border border-gray-200"
@@ -483,50 +508,48 @@
           <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 animate-fade-in-up">
             <h3 class="text-lg font-semibold text-gray-900 mb-5">Recent Activity</h3>
             <div class="space-y-4">
-              {% for attempt in recent_activity %}
-              <div class="flex items-start space-x-4">
-                <div class="bg-green-100 p-2 rounded-lg flex-shrink-0">
-                  <i class="fas fa-check-circle text-green-600"></i>
+              {% for activity in recent_activity %}
+                <div class="flex items-start space-x-4">
+                  {% if activity.type == 'quiz' %}
+                    <div class="bg-green-100 p-2 rounded-lg flex-shrink-0">
+                      <i class="fas fa-clipboard-check text-green-600"></i>
+                    </div>
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-gray-800">Completed quiz: {{ activity.quiz.title }}</p>
+                      <p class="text-xs text-gray-500 mt-1">Score: {{ activity.score|floatformat:1 }}% · {{ activity.start_time|timesince }} ago</p>
+                    </div>
+                  {% elif activity.type == 'video' %}
+                    <div class="bg-blue-100 p-2 rounded-lg flex-shrink-0">
+                      <i class="fas fa-play-circle text-blue-600"></i>
+                    </div>
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-gray-800">Watched video: {{ activity.resource.title }}</p>
+                      <p class="text-xs text-gray-500 mt-1">{{ activity.watched_at|timesince }} ago</p>
+                    </div>
+                  {% endif %}
+                  <button class="text-xs text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-ellipsis-v"></i>
+                  </button>
                 </div>
-                <div class="flex-1">
-                  <p class="text-sm font-medium text-gray-800">Completed {{ attempt.quiz.title }}</p>
-                  <p class="text-xs text-gray-500 mt-1">Score: {{ attempt.score|floatformat:1 }}% · {{ attempt.start_time|timesince }} ago</p>
-                </div>
-                <button class="text-xs text-gray-400 hover:text-gray-500">
-                  <i class="fas fa-ellipsis-v"></i>
-                </button>
-              </div>
               {% endfor %}
-            </div>
-            <div class="mt-5 text-center">
-              <a href="/activity/" class="text-sm text-green-600 hover:underline font-medium">View all activity</a>
             </div>
           </div>
 
           <!-- Upcoming Exams -->
           <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 animate-fade-in-up">
-            <h3 class="text-lg font-semibold text-gray-900 mb-5">Upcoming Exams</h3>
-            <div class="space-y-4">
-              {% for exam in upcoming_exams %}
-              <div class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-                <div class="bg-{{ exam.priority_color }}-100 rounded-lg p-3 flex-shrink-0">
-                  <span class="text-{{ exam.priority_color }}-600 font-bold">{{ exam.date }}</span>
-                  <span class="text-xs text-{{ exam.priority_color }}-600 block">{{ exam.month }}</span>
+            <h3 class="text-lg font-semibold text-gray-900 mb-5">Quizzes You Haven't Tried Yet</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for quiz in unattempted_quizzes %}
+              <div class="p-4 border rounded-lg flex flex-col justify-between hover:shadow card-hover">
+                <div>
+                  <h4 class="font-bold text-gray-800 mb-1">{{ quiz.title }}</h4>
+                  <p class="text-sm text-gray-500 mb-2">{{ quiz.certification.title }}</p>
                 </div>
-                <div class="ml-4 flex-1">
-                  <h4 class="font-medium text-gray-800">{{ exam.title }}</h4>
-                  <p class="text-xs text-gray-500 mt-1">{{ exam.description }}</p>
-                </div>
-                <div class="ml-2 text-center">
-                  <span class="block text-xs font-medium text-gray-500">{{ exam.days_left }} days</span>
-                  <span class="block text-xs text-{{ exam.priority_color }}-500 mt-1">{{ exam.priority }}</span>
-                </div>
+                <a href="{% url 'start_quiz' quiz.id %}" class="mt-2 px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 transition-colors text-center">Start Quiz</a>
               </div>
-              {% endfor %}
-            </div>
-            <div class="mt-5 text-center">
-              <a href="/calendar/" class="text-sm text-green-600 hover:underline font-medium">View full calendar</a>
-            </div>
+            {% empty %}
+              <div class="col-span-full text-gray-400 text-center py-8">You've attempted all available quizzes!</div>
+            {% endfor %}
           </div>
         </div>
 </main>
@@ -547,6 +570,409 @@
       </footer>
 </div>
 </div>
+
+<!-- Study Plan Modal -->
+<div x-show="studyPlanModal.isOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+  <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+    <div x-show="studyPlanModal.isOpen" class="fixed inset-0 transition-opacity" aria-hidden="true">
+      <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+    </div>
+
+    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full modal-content">
+      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="mb-4 flex justify-between items-center">
+          <div>
+            <h3 class="text-2xl font-bold text-gray-900">Create Study Plan</h3>
+            <p class="mt-1 text-sm text-gray-500">Schedule your study session</p>
+          </div>
+          <button @click="studyPlanModal.closeModal()" class="text-gray-400 hover:text-gray-500">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        <!-- Step Indicator -->
+        <div class="mb-8">
+          <div class="flex items-center justify-center space-x-4">
+            <template x-for="(step, index) in studyPlanModal.steps" :key="index">
+              <div class="flex items-center">
+                <div :class="{
+                  'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium': true,
+                  'bg-green-600 text-white': studyPlanModal.currentStep >= index,
+                  'bg-gray-200 text-gray-600': studyPlanModal.currentStep < index
+                }">
+                  <span x-text="index + 1"></span>
+                </div>
+                <div class="ml-2 text-sm font-medium" x-text="step"></div>
+                <div x-show="index < studyPlanModal.steps.length - 1" class="ml-4 w-12 h-0.5 bg-gray-200"></div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Step 1: Calendar -->
+        <div x-show="studyPlanModal.currentStep === 0" class="form-step">
+          <div class="flex items-center justify-between mb-2">
+            <button @click="studyPlanModal.prevMonth()" class="p-2 rounded-full hover:bg-gray-100"><i class="fas fa-chevron-left"></i></button>
+            <div class="text-lg font-semibold" x-text="studyPlanModal.monthYearLabel"></div>
+            <button @click="studyPlanModal.nextMonth()" class="p-2 rounded-full hover:bg-gray-100"><i class="fas fa-chevron-right"></i></button>
+          </div>
+          <div class="grid grid-cols-7 gap-2 mb-4">
+            <template x-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']">
+              <div class="text-center text-sm font-medium text-gray-500" x-text="day"></div>
+            </template>
+          </div>
+          <div class="grid grid-cols-7 gap-2">
+            <template x-for="day in studyPlanModal.calendarDays" :key="day.date">
+              <button
+                @click="studyPlanModal.selectDate(day.date)"
+                :class="{
+                  'calendar-day w-12 h-12 rounded-full flex items-center justify-center text-sm font-medium': true,
+                  'bg-gray-100': !day.isCurrentMonth,
+                  'selected': day.date === studyPlanModal.form.scheduled_date,
+                  'has-events': day.hasEvents
+                }"
+                :disabled="!day.isCurrentMonth"
+              >
+                <span x-text="day.day"></span>
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <!-- Step 2: Time Selection -->
+        <div x-show="studyPlanModal.currentStep === 1" class="form-step">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
+          <select x-model="studyPlanModal.form.scheduled_time" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
+            <template x-for="time in studyPlanModal.timeSlots" :key="time">
+              <option :value="time" x-text="time"></option>
+            </template>
+          </select>
+        </div>
+
+        <!-- Step 3: Activity Details -->
+        <div x-show="studyPlanModal.currentStep === 2" class="form-step">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Title</label>
+              <input type="text" x-model="studyPlanModal.form.title" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Certification</label>
+              <select x-model="studyPlanModal.form.certification" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                <option value="">Select a certification</option>
+                {% for cert in active_certifications %}
+                  <option value="{{ cert.id }}">{{ cert.title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Activity Type</label>
+              <div class="grid grid-cols-4 gap-4 mt-2">
+                <template x-for="type in studyPlanModal.activityTypes" :key="type.value">
+                  <button
+                    @click="studyPlanModal.form.activity_type = type.value"
+                    :class="{
+                      'p-4 rounded-lg text-center transition-all duration-200': true,
+                      'bg-green-100 text-green-700 border-2 border-green-500': studyPlanModal.form.activity_type === type.value,
+                      'bg-gray-100 text-gray-700 hover:bg-gray-200': studyPlanModal.form.activity_type !== type.value
+                    }"
+                  >
+                    <i :class="type.icon + ' text-xl mb-2'"></i>
+                    <div class="text-sm font-medium" x-text="type.label"></div>
+                  </button>
+                </template>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Duration</label>
+              <div class="mt-2 flex items-center space-x-4">
+                <button
+                  @click="studyPlanModal.form.duration = Math.max(15, studyPlanModal.form.duration - 15)"
+                  class="p-2 rounded-full bg-gray-100 hover:bg-gray-200"
+                >
+                  <i class="fas fa-minus"></i>
+                </button>
+                <span class="text-lg font-medium" x-text="studyPlanModal.form.duration + ' minutes'"></span>
+                <button
+                  @click="studyPlanModal.form.duration += 15"
+                  class="p-2 rounded-full bg-gray-100 hover:bg-gray-200"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Notes (optional)</label>
+              <textarea x-model="studyPlanModal.form.notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+        <template x-if="studyPlanModal.currentStep < studyPlanModal.steps.length - 1">
+          <button
+            @click="studyPlanModal.nextStep()"
+            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm"
+          >
+            Next Step
+          </button>
+        </template>
+        <template x-if="studyPlanModal.currentStep === studyPlanModal.steps.length - 1">
+          <button
+            @click="studyPlanModal.submitStudyPlan()"
+            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm"
+          >
+            Create Plan
+          </button>
+        </template>
+        <button
+          @click="studyPlanModal.previousStep()"
+          x-show="studyPlanModal.currentStep > 0"
+          class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+        >
+          Previous
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="notification-dropdown-container"></div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    fetch('/notification-dropdown/')
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('notification-dropdown-container').innerHTML = html;
+      });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var badge = document.querySelector('.fa-bell').parentElement.querySelector('span');
+    var notificationItems = document.querySelectorAll('.notification-item');
+    var readKey = 'readNotifications';
+    var readIds = JSON.parse(localStorage.getItem(readKey) || '[]');
+    var unreadCount = 0;
+    notificationItems.forEach(function(item) {
+      var id = item.getAttribute('data-id');
+      if (readIds.includes(id)) {
+        item.classList.add('read');
+      } else {
+        unreadCount++;
+      }
+    });
+    function updateBadge() {
+      if (badge) {
+        badge.textContent = unreadCount > 0 ? unreadCount : '';
+        badge.style.display = unreadCount > 0 ? '' : 'none';
+      }
+    }
+    notificationItems.forEach(function(item) {
+      item.addEventListener('click', function() {
+        var id = item.getAttribute('data-id');
+        if (!item.classList.contains('read')) {
+          item.classList.add('read');
+          if (!readIds.includes(id)) {
+            readIds.push(id);
+            localStorage.setItem(readKey, JSON.stringify(readIds));
+          }
+          unreadCount = Math.max(0, unreadCount - 1);
+          updateBadge();
+        }
+      });
+    });
+    // Mark all as read
+    var markAll = document.querySelector('.text-green-600.cursor-pointer');
+    if (markAll) {
+      markAll.addEventListener('click', function() {
+        notificationItems.forEach(function(item) {
+          var id = item.getAttribute('data-id');
+          item.classList.add('read');
+          if (!readIds.includes(id)) {
+            readIds.push(id);
+          }
+        });
+        localStorage.setItem(readKey, JSON.stringify(readIds));
+        unreadCount = 0;
+        updateBadge();
+      });
+    }
+    updateBadge();
+  });
+
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('studyPlanTimeline', () => ({
+      studyPlan: JSON.parse(document.getElementById('today-tasks-data').textContent)
+    }));
+  });
+
+function studyPlanModal() {
+  return {
+    isOpen: false,
+    currentStep: 0,
+    steps: ['Select Date', 'Choose Time', 'Activity Details'],
+    form: {
+      title: '',
+      certification: '',
+      activity_type: '',
+      scheduled_date: '',
+      scheduled_time: '',
+      duration: 30,
+      notes: ''
+    },
+    activityTypes: [
+      { value: 'quiz', label: 'Quiz', icon: 'fas fa-clipboard-check' },
+      { value: 'resource', label: 'Resource', icon: 'fas fa-book' },
+      { value: 'flashcard', label: 'Flashcards', icon: 'fas fa-brain' },
+      { value: 'exam', label: 'Exam', icon: 'fas fa-file-alt' }
+    ],
+    timeSlots: [],
+    calendarDays: [],
+    calendarMonth: null,
+    calendarYear: null,
+    monthYearLabel: '',
+    openStudyPlanModal() {
+      this.isOpen = true;
+      const today = new Date();
+      this.calendarMonth = today.getMonth();
+      this.calendarYear = today.getFullYear();
+      this.generateCalendar();
+      this.generateTimeSlots();
+    },
+    closeModal() {
+      this.isOpen = false;
+      this.resetForm();
+      this.currentStep = 0;
+    },
+    resetForm() {
+      this.form = {
+        title: '',
+        certification: '',
+        activity_type: '',
+        scheduled_date: '',
+        scheduled_time: '',
+        duration: 30,
+        notes: ''
+      };
+    },
+    nextStep() {
+      if (this.currentStep < this.steps.length - 1) {
+        this.currentStep++;
+      }
+    },
+    previousStep() {
+      if (this.currentStep > 0) {
+        this.currentStep--;
+      }
+    },
+    generateCalendar() {
+      const month = this.calendarMonth;
+      const year = this.calendarYear;
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const days = [];
+      // Add days from previous month
+      for (let i = firstDay.getDay(); i > 0; i--) {
+        const date = new Date(year, month, 1 - i);
+        days.push({
+          date: date.toISOString().split('T')[0],
+          day: date.getDate(),
+          isCurrentMonth: false,
+          hasEvents: false
+        });
+      }
+      // Add days from current month
+      for (let i = 1; i <= lastDay.getDate(); i++) {
+        const date = new Date(year, month, i);
+        days.push({
+          date: date.toISOString().split('T')[0],
+          day: i,
+          isCurrentMonth: true,
+          hasEvents: Math.random() > 0.7 // Randomly add some events for demo
+        });
+      }
+      // Add days from next month
+      const remainingDays = 42 - days.length; // 6 rows of 7 days
+      for (let i = 1; i <= remainingDays; i++) {
+        const date = new Date(year, month + 1, i);
+        days.push({
+          date: date.toISOString().split('T')[0],
+          day: date.getDate(),
+          isCurrentMonth: false,
+          hasEvents: false
+        });
+      }
+      this.calendarDays = days;
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      this.monthYearLabel = `${monthNames[month]} ${year}`;
+    },
+    prevMonth() {
+      if (this.calendarMonth === 0) {
+        this.calendarMonth = 11;
+        this.calendarYear--;
+      } else {
+        this.calendarMonth--;
+      }
+      this.generateCalendar();
+    },
+    nextMonth() {
+      if (this.calendarMonth === 11) {
+        this.calendarMonth = 0;
+        this.calendarYear++;
+      } else {
+        this.calendarMonth++;
+      }
+      this.generateCalendar();
+    },
+    selectDate(date) {
+      this.form.scheduled_date = date;
+    },
+    generateTimeSlots() {
+      const slots = [];
+      for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 30) {
+          const hour = h.toString().padStart(2, '0');
+          const min = m.toString().padStart(2, '0');
+          slots.push(`${hour}:${min}`);
+        }
+      }
+      this.timeSlots = slots;
+    },
+    selectTime(time) {
+      this.form.scheduled_time = time;
+    },
+    async submitStudyPlan() {
+      try {
+        const response = await fetch('/create-study-plan/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+          },
+          body: JSON.stringify(this.form)
+        });
+        if (response.ok) {
+          this.closeModal();
+          window.location.reload();
+        } else {
+          const data = await response.json();
+          alert(data.message || 'Failed to create study plan');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to create study plan');
+      }
+    }
+  };
+}
+</script>
 </body>
 
 

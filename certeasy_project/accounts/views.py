@@ -1,10 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from rest_framework import generics, permissions
-from .models import User, Subscription
+from .models import User, Subscription, UserLogin
 from .serializers import UserSerializer, SubscriptionSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login as auth_login
+from .forms import LoginForm
 
 # Auto-expire outdated subscriptions on fetch
 def expire_old_subscriptions():
@@ -66,3 +68,19 @@ def settings_view(request):
     return render(request, 'accounts/settings.html', {
         'user': request.user
     })
+
+def login_view(request):
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            auth_login(request, user)
+            # Record login for streak
+            UserLogin.objects.get_or_create(
+                user=user,
+                login_date=timezone.now().date()
+            )
+            return redirect('dashboard')
+    else:
+        form = LoginForm()
+    return render(request, 'login.html', {'form': form})

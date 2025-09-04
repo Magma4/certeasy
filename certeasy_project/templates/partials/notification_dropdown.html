@@ -1,0 +1,67 @@
+<div class="relative" x-data="{ open: false }">
+  <button @click="open = !open" class="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
+    <i class="fas fa-bell"></i>
+    <span x-show="notifications.length > 0" class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-pink-500 rounded-full" x-text="notifications.length"></span>
+  </button>
+  <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-100">
+    <div class="p-4 border-b font-semibold text-gray-700 flex justify-between items-center">
+      <span>Notifications</span>
+      <span class="text-xs text-green-600 cursor-pointer hover:underline">Mark all as read</span>
+    </div>
+    <ul class="text-sm text-gray-600 max-h-72 overflow-y-auto" id="notification-list">
+      {% for notification in notifications %}
+      <li class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer notification-item" data-id="{{ notification.id }}">
+        <div class="flex items-start">
+          <div class="rounded-full p-2 mr-3"
+            {% if notification.type == 'quiz' %}
+              class="bg-blue-100"
+            {% elif notification.type == 'streak' %}
+              class="bg-orange-100"
+            {% elif notification.type == 'like' %}
+              class="bg-pink-100"
+            {% elif notification.type == 'comment' %}
+              class="bg-green-100"
+            {% elif notification.type == 'subscription' %}
+              class="bg-purple-100"
+            {% endif %}
+          >
+            <i class="fas fa-{{ notification.icon }}
+              {% if notification.type == 'quiz' %}
+                text-blue-600
+              {% elif notification.type == 'streak' %}
+                text-orange-600
+              {% elif notification.type == 'like' %}
+                text-pink-600
+              {% elif notification.type == 'comment' %}
+                text-green-600
+              {% elif notification.type == 'subscription' %}
+                text-purple-600
+              {% endif %}
+              text-sm"></i>
+          </div>
+          <div>
+            {% if notification.type == 'quiz' %}
+              <a href="{% url 'quizzes'%}" class="font-medium hover:underline notification-link">{{ notification.title }}</a>
+            {% elif notification.type == 'like' or notification.type == 'comment' %}
+              <a href="{% url 'discussions' %}" class="font-medium hover:underline notification-link">{{ notification.title }}</a>
+            {% elif notification.type == 'subscription' %}
+              <a href="{% url 'mycertifications' %}" class="font-medium hover:underline notification-link">{{ notification.title }}</a>
+            {% else %}
+              <span class="font-medium">{{ notification.title }}</span>
+            {% endif %}
+            <p class="text-xs text-gray-500 mt-1">{{ notification.time }}</p>
+          </div>
+        </div>
+      </li>
+      {% empty %}
+      <li class="px-4 py-3 text-center text-gray-500">
+        <i class="far fa-bell text-2xl mb-2"></i>
+        <p>No notifications yet</p>
+      </li>
+      {% endfor %}
+    </ul>
+    <div class="p-3 text-center border-t border-gray-100">
+      <a href="/notifications" class="text-sm text-green-600 hover:underline">View all notifications</a>
+    </div>
+  </div>
+</div>
