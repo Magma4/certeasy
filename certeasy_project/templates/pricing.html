@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pricing - CertEasy</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+  <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+    <div class="text-center">
+      <h2 class="text-base font-semibold text-green-600 tracking-wide uppercase">Pricing</h2>
+      <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+        Simple, transparent pricing
+      </p>
+      <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
+        Unlock AI-powered study tools, unlimited flashcards, and lecture transcriptions.
+      </p>
+    </div>
+
+    <div class="mt-16 flex flex-col sm:flex-row justify-center items-center gap-8">
+      <!-- Free Plan -->
+      <div class="bg-white rounded-lg shadow-lg overflow-hidden w-full max-w-sm border border-gray-100">
+        <div class="px-6 py-8">
+          <h3 class="text-2xl font-semibold text-gray-900 text-center">Basic</h3>
+          <div class="mt-4 text-center">
+            <span class="text-4xl font-extrabold text-gray-900">$0</span>
+            <span class="text-base font-medium text-gray-500">/mo</span>
+          </div>
+          <p class="mt-4 text-sm text-gray-500 text-center">Perfect for getting started.</p>
+          <ul class="mt-6 space-y-4">
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+              <span class="text-gray-600 text-sm">Access to free certifications</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+              <span class="text-gray-600 text-sm">Community discussions</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-times text-red-500 mt-1 mr-3"></i>
+              <span class="text-gray-400 text-sm line-through">AI Flashcard Generation</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-times text-red-500 mt-1 mr-3"></i>
+              <span class="text-gray-400 text-sm line-through">AI Lecture Analysis</span>
+            </li>
+          </ul>
+        </div>
+        <div class="px-6 py-8 bg-gray-50">
+          <a href="/signup" class="block w-full text-center px-4 py-2 border border-green-600 rounded-md shadow-sm text-sm font-medium text-green-600 hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+            Sign up for free
+          </a>
+        </div>
+      </div>
+
+      <!-- Pro Plan -->
+      <div class="bg-green-600 rounded-lg shadow-xl overflow-hidden w-full max-w-sm transform scale-105 border-2 border-green-500">
+        <div class="px-6 py-8">
+          <h3 class="text-2xl font-semibold text-white text-center">Pro</h3>
+          <div class="mt-4 text-center">
+            <span class="text-4xl font-extrabold text-white">$19</span>
+            <span class="text-base font-medium text-green-200">/mo</span>
+          </div>
+          <p class="mt-4 text-sm text-green-100 text-center">Everything you need to pass.</p>
+          <ul class="mt-6 space-y-4 text-green-50">
+            <li class="flex items-start">
+              <i class="fas fa-check text-white mt-1 mr-3"></i>
+              <span class="text-sm">All Basic features</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-white mt-1 mr-3"></i>
+              <span class="text-sm">Unlimited AI Flashcard Generation</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-white mt-1 mr-3"></i>
+              <span class="text-sm">AI Resource Generation</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-white mt-1 mr-3"></i>
+              <span class="text-sm">Lecture Audio Analysis & Transcription</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-white mt-1 mr-3"></i>
+              <span class="text-sm">Automated Quiz Generation</span>
+            </li>
+          </ul>
+        </div>
+        <div class="px-6 py-8 bg-green-700">
+          <button onclick="alert('Stripe checkout simulation')" class="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-green-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+            Upgrade to Pro
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
