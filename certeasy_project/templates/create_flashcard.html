@@ -128,11 +128,15 @@
                   <h3 class="text-sm font-medium text-green-800">Generate with AI</h3>
                   <p class="text-xs text-green-600 mt-1">Provide a prompt and let AI create the flashcard for you.</p>
                 </div>
-                <div class="flex items-center space-x-2">
-                  <input type="text" id="ai_prompt" class="rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" placeholder="e.g. OSI model layer 1">
-                  <button type="button" id="btnAIGenerate" class="px-3 py-2 bg-green-600 text-white text-sm rounded-md font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    <i class="fas fa-magic mr-1"></i> Generate
-                  </button>
+                <div class="flex flex-col space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <input type="text" id="ai_prompt" class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" placeholder="e.g. OSI model layer 1">
+                    <input type="file" id="ai_file" accept=".pdf" class="text-sm">
+                    <button type="button" id="btnAIGenerate" class="px-3 py-2 bg-green-600 text-white text-sm rounded-md font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 whitespace-nowrap">
+                      <i class="fas fa-magic mr-1"></i> Generate
+                    </button>
+                  </div>
+                  <p class="text-xs text-gray-500">Upload a PDF or type a prompt to auto-generate.</p>
                 </div>
               </div>
 
@@ -197,8 +201,11 @@
 
     document.getElementById('btnAIGenerate').addEventListener('click', async function() {
       const prompt = document.getElementById('ai_prompt').value;
-      if (!prompt) {
-        alert("Please enter a prompt for AI generation.");
+      const fileInput = document.getElementById('ai_file');
+      const file = fileInput.files.length > 0 ? fileInput.files[0] : null;
+
+      if (!prompt && !file) {
+        alert("Please enter a prompt or select a PDF file for AI generation.");
         return;
       }
 
@@ -207,18 +214,35 @@
       btn.disabled = true;
 
       try {
-        const res = await fetch('/api/ai/generate/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-          },
-          body: JSON.stringify({
-            type: 'flashcards',
-            prompt: prompt,
-            count: 1
-          })
-        });
+        let res;
+        if (file) {
+          const formData = new FormData();
+          formData.append('type', 'flashcards');
+          formData.append('file', file);
+          formData.append('count', 1);
+          if (prompt) formData.append('prompt', prompt);
+
+          res = await fetch('/api/ai/generate/', {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+          });
+        } else {
+          res = await fetch('/api/ai/generate/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+              type: 'flashcards',
+              prompt: prompt,
+              count: 1
+            })
+          });
+        }
 
         const data = await res.json();
         if (data.success && data.data && data.data.length > 0) {

@@ -68,6 +68,10 @@ urlpatterns = [
     path('record-lecture/', record_lecture_view, name='record_lecture'),
     path('api/ai/transcribe/', ai_transcribe, name='ai_transcribe'),
     path('pricing/', pricing_view, name='pricing'),
+    path('api/create-checkout-session/', create_checkout_session, name='create_checkout_session'),
+    path('api/stripe-webhook/', stripe_webhook, name='stripe_webhook'),
+    path('api/generate-mock-exam/', generate_mock_exam, name='generate_mock_exam'),
+    path('api/export-flashcards/<int:cert_id>/', export_flashcards, name='export_flashcards'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
