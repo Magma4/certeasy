@@ -29,7 +29,7 @@ urlpatterns = [
     path('mycertifications', mycertifications, name='mycertifications'),
     path('resources', resources, name='resources'),
     path('flashcards', flashcards, name='flashcards'),
-    # path('flashcards/create/', create_flashcard, name='create_flashcard'),
+    path('flashcards/create/', create_flashcard, name='create_flashcard'),
     path('quizzes', quizzes, name='quizzes'),
     path('forgot-password/', forgot_password_page, name='forgot_password'),
     path('reset-password/<str:uidb64>/<str:token>/', reset_confirm_page, name='reset_confirm'),
@@ -64,6 +64,10 @@ urlpatterns = [
     path('create-study-plan/', create_study_plan, name='create_study_plan'),
     path('certification/<int:cert_id>/', certification_view, name='certification_view'),
     path('notification-dropdown/', notification_dropdown_view, name='notification_dropdown'),
+    path('api/ai/generate/', ai_generate, name='ai_generate'),
+    path('record-lecture/', record_lecture_view, name='record_lecture'),
+    path('api/ai/transcribe/', ai_transcribe, name='ai_transcribe'),
+    path('pricing/', pricing_view, name='pricing'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

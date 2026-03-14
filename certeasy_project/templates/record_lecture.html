@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{
+    sidebarOpen: false,
+    profileOpen: false,
+    notifyOpen: false,
+    notifications: {{ notifications|safe }},
+}" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Record Lecture - CertEasy</title>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body class="h-screen overflow-hidden font-sans">
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed z-30 inset-y-0 left-0 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
+      <div class="flex flex-col justify-between h-full">
+        <div>
+          <div class="flex items-center space-x-2 px-6 py-5 border-b border-gray-700">
+            <div class="bg-white p-1 rounded-md">
+              <img src="/static/uploads/ce.png" alt="Logo" class="h-8">
+            </div>
+            <span class="font-bold text-white text-lg">CertEasy</span>
+          </div>
+          <nav class="mt-6 flex flex-col space-y-1 px-3 text-sm">
+            <a href="{% url 'dashboard' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-chart-line mr-3 text-green-300"></i> Overview
+            </a>
+            <a href="{% url 'mycertifications' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-graduation-cap mr-3 text-green-300"></i> My Certifications
+            </a>
+            <a href="{% url 'resources' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-book mr-3 text-green-300"></i> Resources
+            </a>
+            <a href="{% url 'flashcards' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-brain mr-3 text-green-300"></i> Flashcards
+            </a>
+            <a href="{% url 'quizzes' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-clipboard-check mr-3 text-green-300"></i> Quizzes
+            </a>
+            <a href="{% url 'record_lecture' %}" class="sidebar-link flex items-center px-4 py-3 rounded sidebar-link-active text-white font-medium">
+              <i class="fas fa-microphone mr-3 text-green-300"></i> Record Lecture
+            </a>
+            <a href="/discussions/" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-comments mr-3 text-green-300"></i> Community
+            </a>
+          </nav>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50">
+      <!-- Top bar -->
+      <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+        <div class="flex items-center space-x-4 lg:hidden">
+          <button @click="sidebarOpen = !sidebarOpen" class="text-gray-700 focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <span class="font-semibold text-lg">Record Lecture</span>
+        </div>
+
+        <div class="flex-1 flex justify-end items-center space-x-4">
+          <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
+              <div class="relative">
+                <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=10B981&color=fff" class="w-9 h-9 rounded-full border-2 border-green-100" alt="User avatar">
+                <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+              </div>
+              <span class="text-sm font-medium text-gray-700 hidden md:inline">{{ user.get_full_name|default:user.username|title }}</span>
+              <i class="fas fa-chevron-down text-xs text-gray-500 hidden md:inline"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <div class="max-w-4xl mx-auto">
+          <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Record & Analyze Lecture</h1>
+            <p class="text-gray-600 text-sm mt-1">Record a lecture or upload audio to get AI transcriptions, notes, and quizzes.</p>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-8 mb-8 text-center">
+            <div id="recordingControls">
+              <i class="fas fa-microphone text-5xl text-gray-300 mb-4" id="micIcon"></i>
+              <h3 class="text-lg font-semibold text-gray-800 mb-2">Start Recording</h3>
+              <p class="text-sm text-gray-500 mb-6">Click the button below to start capturing lecture audio.</p>
+
+              <button id="btnStart" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full transition-colors mr-2">
+                <i class="fas fa-circle mr-2 text-red-500"></i> Record
+              </button>
+              <button id="btnStop" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full transition-colors hidden">
+                <i class="fas fa-stop mr-2"></i> Stop
+              </button>
+
+              <div class="mt-4 text-xs text-gray-400">
+                Or <label for="audioUpload" class="text-green-600 cursor-pointer hover:underline">upload an audio file</label>
+                <input type="file" id="audioUpload" accept="audio/*" class="hidden">
+              </div>
+            </div>
+
+            <div id="recordingStatus" class="hidden mt-6 flex flex-col items-center">
+              <div class="flex items-center space-x-2 text-red-600 font-semibold animate-pulse mb-2">
+                <div class="w-3 h-3 bg-red-600 rounded-full"></div>
+                <span>Recording in progress...</span>
+              </div>
+              <div class="text-2xl font-mono text-gray-700" id="timeDisplay">00:00</div>
+            </div>
+
+            <div id="analysisSection" class="hidden mt-8 text-left border-t pt-8 border-gray-100">
+              <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">AI Lecture Analysis</h3>
+
+              <div class="mb-6">
+                <h4 class="font-semibold text-green-700 mb-2 border-b pb-1">Transcription</h4>
+                <div id="transcriptionText" class="bg-gray-50 p-4 rounded-md text-sm text-gray-700 italic border border-gray-200"></div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 class="font-semibold text-blue-700 mb-2 border-b pb-1">Key Notes & Takeaways</h4>
+                  <ul id="keyNotesList" class="list-disc pl-5 text-sm text-gray-700 space-y-1"></ul>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-purple-700 mb-2 border-b pb-1">Suggested Resources</h4>
+                  <ul id="resourcesList" class="list-disc pl-5 text-sm text-blue-600 space-y-1"></ul>
+                </div>
+              </div>
+
+              <div class="mt-6">
+                <h4 class="font-semibold text-orange-700 mb-2 border-b pb-1">Generated Quiz Questions</h4>
+                <div id="quizContainer" class="space-y-4"></div>
+              </div>
+            </div>
+
+            <div id="loadingAnalysis" class="hidden mt-8 text-center text-gray-600">
+              <i class="fas fa-spinner fa-spin text-3xl mb-3 text-green-600"></i>
+              <p>Analyzing audio with AI... Please wait.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+    let timerInterval;
+    let seconds = 0;
+
+    const btnStart = document.getElementById('btnStart');
+    const btnStop = document.getElementById('btnStop');
+    const recordingStatus = document.getElementById('recordingStatus');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const micIcon = document.getElementById('micIcon');
+    const analysisSection = document.getElementById('analysisSection');
+    const loadingAnalysis = document.getElementById('loadingAnalysis');
+
+    btnStart.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = event => {
+          audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          audioChunks = [];
+          analyzeAudio(audioBlob);
+        };
+
+        mediaRecorder.start();
+
+        btnStart.classList.add('hidden');
+        btnStop.classList.remove('hidden');
+        recordingStatus.classList.remove('hidden');
+        micIcon.classList.remove('text-gray-300');
+        micIcon.classList.add('text-red-500', 'animate-pulse');
+
+        seconds = 0;
+        timeDisplay.innerText = '00:00';
+        timerInterval = setInterval(() => {
+          seconds++;
+          const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+          const secs = String(seconds % 60).padStart(2, '0');
+          timeDisplay.innerText = `${mins}:${secs}`;
+        }, 1000);
+
+      } catch (err) {
+        alert("Microphone access denied or not available.");
+        console.error(err);
+      }
+    });
+
+    btnStop.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      }
+
+      clearInterval(timerInterval);
+      btnStop.classList.add('hidden');
+      btnStart.classList.remove('hidden');
+      recordingStatus.classList.add('hidden');
+      micIcon.classList.remove('text-red-500', 'animate-pulse');
+      micIcon.classList.add('text-gray-300');
+    });
+
+    document.getElementById('audioUpload').addEventListener('change', function(e) {
+      if (e.target.files.length > 0) {
+        analyzeAudio(e.target.files[0]);
+      }
+    });
+
+    async function analyzeAudio(audioBlob) {
+      analysisSection.classList.add('hidden');
+      loadingAnalysis.classList.remove('hidden');
+
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'lecture.webm');
+
+      try {
+        const response = await fetch('/api/ai/transcribe/', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Populate data
+          document.getElementById('transcriptionText').innerText = data.transcription;
+
+          const notesList = document.getElementById('keyNotesList');
+          notesList.innerHTML = '';
+          data.key_notes.forEach(note => {
+            const li = document.createElement('li');
+            li.innerText = note;
+            notesList.appendChild(li);
+          });
+
+          const resourcesList = document.getElementById('resourcesList');
+          resourcesList.innerHTML = '';
+          data.resources.forEach(res => {
+            const li = document.createElement('li');
+            li.innerHTML = `<a href="${res.url}" target="_blank" class="hover:underline">${res.title}</a>`;
+            resourcesList.appendChild(li);
+          });
+
+          const quizContainer = document.getElementById('quizContainer');
+          quizContainer.innerHTML = '';
+          data.quiz.forEach((q, idx) => {
+            const div = document.createElement('div');
+            div.className = "bg-orange-50 p-3 rounded border border-orange-100 text-sm";
+            let optionsHtml = q.options.map(opt => `<span class="inline-block bg-white border border-gray-200 rounded px-2 py-1 mr-2 mt-2">${opt}</span>`).join('');
+            div.innerHTML = `
+              <p class="font-medium text-gray-800">Q${idx+1}: ${q.question}</p>
+              <div class="mt-1">${optionsHtml}</div>
+              <p class="mt-2 text-green-700 font-semibold"><i class="fas fa-check-circle mr-1"></i> Answer: ${q.answer}</p>
+            `;
+            quizContainer.appendChild(div);
+          });
+
+          loadingAnalysis.classList.add('hidden');
+          analysisSection.classList.remove('hidden');
+        } else {
+          alert("Error: " + data.message);
+          loadingAnalysis.classList.add('hidden');
+        }
+      } catch (err) {
+        console.error(err);
+        alert("An error occurred during analysis.");
+        loadingAnalysis.classList.add('hidden');
+      }
+    }
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  </script>
+</body>
+</html>
