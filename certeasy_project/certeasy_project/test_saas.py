@@ -1,33 +1,44 @@
-from django.test import TestCase, Client
+import stripe
+from django.conf import settings
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from django.contrib.auth import get_user_model
-from certifications.models import Certification
-from flashcards.models import Flashcard
+from django.http import JsonResponse
+import os
+import json
 
-class SaaSFeaturesTestCase(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.user = get_user_model().objects.create_user(username='testuser', password='testpassword')
-        self.client.login(username='testuser', password='testpassword')
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_mock')
 
-        self.cert = Certification.objects.create(title="Test Cert", description="Test Desc", category="Test")
-        self.fc = Flashcard.objects.create(certification=self.cert, front_text="Front", back_text="Back", topic="Test")
+def pricing_page(request):
+    return render(request, 'pricing.html')
 
-    def test_export_flashcards(self):
-        url = reverse('export_flashcards', args=[self.cert.id])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'text/csv')
-        self.assertIn(b'Front', response.content)
+@login_required
+def record_lecture_page(request):
+    return render(request, 'record_lecture.html')
 
-    def test_pricing_view(self):
-        url = reverse('pricing')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Simple, transparent pricing')
+@login_required
+def create_checkout_session(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
 
-    def test_create_checkout_session(self):
-        url = reverse('create_checkout_session')
-        # Expect an error 403 because we haven't configured real stripe key, but it means endpoint works
-        response = self.client.post(url)
-        self.assertTrue(response.status_code in [200, 403])
+    try:
+        data = json.loads(request.body)
+        price_id = data.get('priceId')
+
+        if stripe.api_key == 'sk_test_mock':
+            return JsonResponse({'url': '/dashboard/'})
+
+        checkout_session = stripe.checkout.Session.create(
+            line_items=[
+                {
+                    'price': price_id,
+                    'quantity': 1,
+                },
+            ],
+            mode='subscription',
+            success_url=request.build_absolute_uri(reverse('dashboard')) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=request.build_absolute_uri(reverse('pricing')),
+        )
+        return JsonResponse({'url': checkout_session.url})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

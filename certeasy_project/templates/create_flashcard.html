@@ -122,22 +122,17 @@
                 <input type="text" id="topic" name="topic" class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" placeholder="e.g., Security, Networking, etc.">
               </div>
 
+              <!-- PDF Upload -->
+              <div>
+                <label for="pdf_upload" class="block text-sm font-medium text-gray-700 mb-1">Or Upload PDF Notes to Generate</label>
+                <input type="file" id="pdf_upload" name="pdf_upload" accept=".pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+              </div>
+
               <!-- AI Generation Button -->
-              <div class="flex items-center justify-between bg-green-50 p-4 rounded-md border border-green-200">
-                <div>
-                  <h3 class="text-sm font-medium text-green-800">Generate with AI</h3>
-                  <p class="text-xs text-green-600 mt-1">Provide a prompt and let AI create the flashcard for you.</p>
-                </div>
-                <div class="flex flex-col space-y-2">
-                  <div class="flex items-center space-x-2">
-                    <input type="text" id="ai_prompt" class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" placeholder="e.g. OSI model layer 1">
-                    <input type="file" id="ai_file" accept=".pdf" class="text-sm">
-                    <button type="button" id="btnAIGenerate" class="px-3 py-2 bg-green-600 text-white text-sm rounded-md font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 whitespace-nowrap">
-                      <i class="fas fa-magic mr-1"></i> Generate
-                    </button>
-                  </div>
-                  <p class="text-xs text-gray-500">Upload a PDF or type a prompt to auto-generate.</p>
-                </div>
+              <div class="flex justify-end">
+                <button type="button" id="aiGenerateBtn" class="px-4 py-2 bg-purple-600 text-white text-sm rounded-md font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 flex items-center">
+                  <i class="fas fa-magic mr-2"></i> Auto-Generate via AI
+                </button>
               </div>
 
               <!-- Submit Button -->
@@ -157,6 +152,68 @@
   </div>
 
   <script>
+    document.getElementById('aiGenerateBtn').addEventListener('click', async function() {
+      const topicInput = document.getElementById('topic').value;
+      const certificationSelect = document.getElementById('certification');
+      const certName = certificationSelect.options[certificationSelect.selectedIndex]?.text || '';
+
+      let queryTopic = topicInput || certName || 'General Certification Knowledge';
+
+      const btn = this;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
+      btn.disabled = true;
+
+      try {
+        const pdfInput = document.getElementById('pdf_upload');
+        if (pdfInput.files && pdfInput.files.length > 0) {
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Extracting PDF...';
+          const formData = new FormData();
+          formData.append('pdf', pdfInput.files[0]);
+
+          const pdfResponse = await fetch('/api/ai/extract_pdf/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-CSRFToken': getCookie('csrftoken')
+            }
+          });
+          const pdfData = await pdfResponse.json();
+          if (pdfData.text) {
+             queryTopic = "Information from PDF: " + pdfData.text.substring(0, 1000);
+          }
+        }
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
+        const response = await fetch('/api/ai/generate/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: JSON.stringify({
+            topic: queryTopic,
+            type: 'flashcards',
+            count: 1
+          })
+        });
+
+        const data = await response.json();
+        if (data.flashcards && data.flashcards.length > 0) {
+          document.getElementById('front_text').value = data.flashcards[0].question;
+          document.getElementById('back_text').value = data.flashcards[0].answer;
+        } else {
+          alert('Failed to generate content from AI.');
+        }
+      } catch (e) {
+        console.error(e);
+        alert('An error occurred calling the AI API.');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    });
+
     document.getElementById('createFlashcardForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
@@ -198,68 +255,6 @@
       }
       return cookieValue;
     }
-
-    document.getElementById('btnAIGenerate').addEventListener('click', async function() {
-      const prompt = document.getElementById('ai_prompt').value;
-      const fileInput = document.getElementById('ai_file');
-      const file = fileInput.files.length > 0 ? fileInput.files[0] : null;
-
-      if (!prompt && !file) {
-        alert("Please enter a prompt or select a PDF file for AI generation.");
-        return;
-      }
-
-      const btn = this;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Generating...';
-      btn.disabled = true;
-
-      try {
-        let res;
-        if (file) {
-          const formData = new FormData();
-          formData.append('type', 'flashcards');
-          formData.append('file', file);
-          formData.append('count', 1);
-          if (prompt) formData.append('prompt', prompt);
-
-          res = await fetch('/api/ai/generate/', {
-            method: 'POST',
-            headers: {
-              'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: formData
-          });
-        } else {
-          res = await fetch('/api/ai/generate/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-              type: 'flashcards',
-              prompt: prompt,
-              count: 1
-            })
-          });
-        }
-
-        const data = await res.json();
-        if (data.success && data.data && data.data.length > 0) {
-          document.getElementById('front_text').value = data.data[0].front_text;
-          document.getElementById('back_text').value = data.data[0].back_text;
-          document.getElementById('topic').value = data.data[0].topic || 'AI Generated';
-        } else {
-          alert(data.message || 'Failed to generate flashcard.');
-        }
-      } catch (err) {
-        console.error(err);
-        alert('An error occurred during AI generation.');
-      } finally {
-        btn.innerHTML = '<i class="fas fa-magic mr-1"></i> Generate';
-        btn.disabled = false;
-      }
-    });
   </script>
 </body>
 </html>

@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from certifications.models import Certification
@@ -28,17 +27,24 @@ class UserLogin(models.Model):
         unique_together = ('user', 'login_date')
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='gamified_profile')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     study_streak = models.IntegerField(default=0)
     last_study_date = models.DateField(null=True, blank=True)
+    points = models.IntegerField(default=0)
 
     def update_streak(self):
+        from django.utils import timezone
+        import datetime
         today = timezone.now().date()
+
         if self.last_study_date == today:
-            return # already studied today
-        elif self.last_study_date == today - timezone.timedelta(days=1):
+            return  # Already updated today
+
+        if self.last_study_date == today - datetime.timedelta(days=1):
             self.study_streak += 1
         else:
-            self.study_streak = 1
+            self.study_streak = 1  # Reset or start new streak
+
         self.last_study_date = today
+        self.points += 10 # Award points
         self.save()

@@ -6,7 +6,7 @@ from quizzes.models import Quiz, QuizAttempt
 from django.db.models import Avg, Count
 from django.utils import timezone
 from django.urls import reverse
-from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
+from django.http import HttpResponseRedirect, JsonResponse
 from resources.models import Resource, VideoView
 from discussions.models import Post, Like, Comment
 from django.core.paginator import Paginator
@@ -34,6 +34,12 @@ def signup_page(request):
 @login_required
 def dashboard_page(request):
     user = request.user
+
+    # Update Gamification streak
+    from accounts.models import UserProfile
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    profile.update_streak()
+
     # Get user's active certifications
     active_subscriptions = Subscription.objects.filter(
         user=user,
@@ -220,7 +226,8 @@ def dashboard_page(request):
         'overall_progress': overall_progress,
         'tasks_total': len(today_tasks),
         'tasks_completed': len([task for task in today_tasks if task['status'] == 'Completed']),
-        'streak': streak,
+        'streak': profile.study_streak,
+        'points': profile.points,
         'quiz_average': round(quiz_average, 1)
     }
 
@@ -616,11 +623,15 @@ def quizzes(request):
     ).select_related('certification')[:3]
 
     # Calculate user statistics
+    from accounts.models import UserProfile
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
     user_stats = {
         'overall_progress': 65,  # This should be calculated based on all certifications
         'tasks_total': 7,
         'tasks_completed': 3,
-        'streak': 14,
+        'streak': profile.study_streak,
+        'points': profile.points,
         'quiz_average': quiz_attempts.aggregate(
             avg_score=Avg('score')
         )['avg_score'] or 0
@@ -1016,439 +1027,3 @@ def notification_dropdown_view(request):
     # --- Get notifications (same as dashboard) ---
     notifications = _get_user_notifications(user)
     return render(request, 'partials/notification_dropdown.html', {'notifications': notifications})
-
-@login_required
-def create_flashcard(request):
-    if request.method == 'POST':
-        certification_id = request.POST.get('certification')
-        front_text = request.POST.get('front_text')
-        back_text = request.POST.get('back_text')
-        topic = request.POST.get('topic', '')
-
-        try:
-            cert = Certification.objects.get(id=certification_id)
-            # Ensure user is subscribed
-            if not Subscription.objects.filter(user=request.user, certification=cert, active=True).exists():
-                return JsonResponse({'success': False, 'message': 'You must be subscribed to this certification.'})
-
-            Flashcard.objects.create(
-                certification=cert,
-                front_text=front_text,
-                back_text=back_text,
-                topic=topic
-            )
-            return JsonResponse({'success': True, 'message': 'Flashcard created successfully.'})
-        except Certification.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Certification not found.'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
-
-    # GET request
-    user_cert_ids = Subscription.objects.filter(
-        user=request.user,
-        active=True
-    ).values_list('certification_id', flat=True)
-
-    certifications = Certification.objects.filter(id__in=user_cert_ids)
-    notifications = _get_user_notifications(request.user)
-
-    return render(request, 'create_flashcard.html', {
-        'certifications': certifications,
-        'user': request.user,
-        'notifications': notifications,
-    })
-
-import random
-import os
-import json
-from django.conf import settings
-try:
-    from openai import OpenAI
-    client = OpenAI(api_key=getattr(settings, 'OPENAI_API_KEY', 'dummy'))
-except ImportError:
-    client = None
-
-@login_required
-@require_POST
-def ai_generate(request):
-    """
-    A generic endpoint for AI generation.
-    Expects JSON data:
-    {
-        "type": "flashcards", # or "quiz", "resource", "study_plan", etc.
-        "prompt": "Create flashcards about AWS S3.",
-        "certification_id": 1, # optional context
-        "count": 5 # optional
-    }
-    """
-    import PyPDF2
-
-    try:
-        # Check if form data is used (for file uploads)
-        if request.content_type.startswith('multipart/form-data'):
-            gen_type = request.POST.get('type')
-            prompt = request.POST.get('prompt', '')
-            cert_id = request.POST.get('certification_id')
-            count = int(request.POST.get('count', 3))
-
-            if 'file' in request.FILES:
-                uploaded_file = request.FILES['file']
-                if uploaded_file.name.endswith('.pdf'):
-                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                    text = ""
-                    for page in pdf_reader.pages[:5]: # limiting to first 5 pages for brevity
-                        text += page.extract_text()
-                    prompt = f"Based on this document text: {text[:2000]}... generate flashcards."
-                else:
-                    return JsonResponse({"success": False, "message": "Only PDF files are supported currently."})
-            data = {"type": gen_type, "prompt": prompt, "certification_id": cert_id, "count": count}
-        else:
-            data = json.loads(request.body)
-            gen_type = data.get('type')
-            prompt = data.get('prompt', '')
-            cert_id = data.get('certification_id')
-
-        context_cert = ""
-        if cert_id:
-            try:
-                cert = Certification.objects.get(id=cert_id)
-                context_cert = f" Context: The user is studying for {cert.title} certification."
-            except Certification.DoesNotExist:
-                pass
-
-        if client and client.api_key and client.api_key != "dummy_key_for_tests" and client.api_key != "dummy":
-            try:
-                # Real OpenAI Integration
-                if gen_type == 'flashcards':
-                    count = data.get('count', 3)
-                    sys_prompt = f"You are an expert tutor.{context_cert} Generate {count} flashcards based on this prompt: {prompt}. Return ONLY a JSON array of objects with keys: 'front_text', 'back_text', 'topic'."
-                    response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[{"role": "system", "content": sys_prompt}],
-                        temperature=0.7
-                    )
-                    content = response.choices[0].message.content
-                    cards = json.loads(content)
-                    return JsonResponse({"success": True, "data": cards})
-
-                elif gen_type == 'resource':
-                    sys_prompt = f"You are an expert tutor.{context_cert} Create a comprehensive study guide in HTML format for the topic: {prompt}. Do not include ```html blocks, just raw HTML."
-                    response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[{"role": "system", "content": sys_prompt}],
-                        temperature=0.7
-                    )
-                    html_content = response.choices[0].message.content
-                    if cert_id:
-                        cert = Certification.objects.get(id=cert_id)
-                        resource = Resource.objects.create(
-                            certification=cert,
-                            title=f"{prompt[:30]} Study Guide",
-                            type='pdf',
-                            created_by_ai=True
-                        )
-                        # We would normally save HTML to PDF here or just save as text/html resource.
-                        # For now, we will just return success.
-                        return JsonResponse({"success": True, "message": "Resource created successfully", "resource_id": resource.id, "content": html_content})
-                    return JsonResponse({"success": True, "content": html_content})
-
-                elif gen_type == 'quiz':
-                    sys_prompt = f"You are an expert tutor.{context_cert} Generate a multiple-choice quiz question for the topic: {prompt}. Return ONLY a JSON object with keys: 'question_text', 'options' (array of 4 strings), 'correct_answer' (one of the options), 'explanation'."
-                    response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[{"role": "system", "content": sys_prompt}],
-                        temperature=0.7
-                    )
-                    content = response.choices[0].message.content
-                    question = json.loads(content)
-                    return JsonResponse({"success": True, "data": [question]})
-
-                else:
-                    return JsonResponse({"success": False, "message": "Unsupported generation type."})
-            except Exception as e:
-                # Fallback to mock if API fails
-                pass
-
-        # Fallback Mock Logic (When API key is dummy or request fails)
-        if gen_type == 'flashcards':
-            count = data.get('count', 3)
-            cards = []
-            for i in range(count):
-                cards.append({
-                    "front_text": f"[AI Generated] What is the primary concept of {prompt}?",
-                    "back_text": f"The answer to {prompt} is fundamental to {context_cert.replace('Context: ', '') if context_cert else 'the topic'}.",
-                    "topic": "AI Concept"
-                })
-            return JsonResponse({"success": True, "data": cards})
-
-        elif gen_type == 'resource':
-            content = f"<h1>{prompt} Study Guide</h1><p>This is a detailed AI-generated guide for {prompt}.{context_cert}</p>"
-            if cert_id:
-                cert = Certification.objects.get(id=cert_id)
-                resource = Resource.objects.create(
-                    certification=cert,
-                    title=f"Study Guide: {prompt}",
-                    type='pdf',
-                    created_by_ai=True
-                )
-                return JsonResponse({"success": True, "message": "Resource created successfully", "resource_id": resource.id})
-            return JsonResponse({"success": True, "content": content})
-
-        elif gen_type == 'quiz':
-            questions = [
-                {
-                    "question_text": f"Which of the following best describes {prompt}?",
-                    "options": ["A core component", "A deprecated feature", "An external library", "None of the above"],
-                    "correct_answer": "A core component",
-                    "explanation": f"This is the accepted industry standard regarding {prompt}."
-                }
-            ]
-            return JsonResponse({"success": True, "data": questions})
-
-        else:
-            return JsonResponse({"success": False, "message": "Unsupported generation type."})
-
-    except Exception as e:
-        return JsonResponse({"success": False, "message": str(e)}, status=400)
-
-@login_required
-def record_lecture_view(request):
-    notifications = _get_user_notifications(request.user)
-    return render(request, 'record_lecture.html', {
-        'user': request.user,
-        'notifications': notifications,
-    })
-
-@login_required
-@require_POST
-def ai_transcribe(request):
-    try:
-        if 'audio' not in request.FILES:
-            return JsonResponse({"success": False, "message": "No audio file uploaded."})
-
-        audio_file = request.FILES['audio']
-
-        # Determine if we can use real API
-        if client and client.api_key and client.api_key != "dummy_key_for_tests" and client.api_key != "dummy":
-            try:
-                # Save file temporarily
-                import tempfile
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
-                    for chunk in audio_file.chunks():
-                        tmp.write(chunk)
-                    tmp_path = tmp.name
-
-                # Transcribe with Whisper
-                with open(tmp_path, "rb") as f:
-                    transcript_response = client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=f
-                    )
-                transcription = transcript_response.text
-                os.unlink(tmp_path)
-
-                # Process with GPT to get notes, quiz, resources
-                sys_prompt = "You are an AI teaching assistant. Extract key notes, create one multiple-choice quiz question, and suggest 2 real external web resources (with title and URL) based on the following lecture transcript. Return ONLY a JSON object with keys: 'key_notes' (array of strings), 'quiz' (array with one object containing 'question', 'options' array, 'answer'), and 'resources' (array of objects with 'title' and 'url')."
-
-                gpt_response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": sys_prompt},
-                        {"role": "user", "content": transcription}
-                    ],
-                    temperature=0.7
-                )
-
-                analysis = json.loads(gpt_response.choices[0].message.content)
-
-                return JsonResponse({
-                    "success": True,
-                    "transcription": transcription,
-                    "key_notes": analysis.get('key_notes', []),
-                    "quiz": analysis.get('quiz', []),
-                    "resources": analysis.get('resources', [])
-                })
-            except Exception as e:
-                # Fallback to mock if API fails
-                print(f"OpenAI API failed: {e}")
-                pass
-
-        # Fallback Mock Logic
-        mock_transcription = (
-            "This is a mocked transcription of the uploaded lecture. "
-            "The key concept discussed today is the OSI model, specifically the Network layer "
-            "and how routers use IP addresses. We also covered security protocols."
-        )
-
-        mock_notes = [
-            "Network layer is responsible for packet forwarding.",
-            "Routers operate at the Network layer.",
-            "Always check IP addressing schemas."
-        ]
-
-        mock_quiz = [
-            {
-                "question": "What layer do routers operate at?",
-                "options": ["Physical", "Data Link", "Network", "Transport"],
-                "answer": "Network"
-            }
-        ]
-
-        mock_resources = [
-            {"title": "Cisco OSI Model Guide", "url": "https://www.cisco.com"},
-            {"title": "Wikipedia: Network Layer", "url": "https://en.wikipedia.org/wiki/Network_layer"}
-        ]
-
-        return JsonResponse({
-            "success": True,
-            "transcription": mock_transcription,
-            "key_notes": mock_notes,
-            "quiz": mock_quiz,
-            "resources": mock_resources
-        })
-    except Exception as e:
-        return JsonResponse({"success": False, "message": str(e)}, status=400)
-
-def pricing_view(request):
-    return render(request, 'pricing.html', {'settings': settings})
-
-import stripe
-stripe.api_key = settings.STRIPE_SECRET_KEY
-
-@login_required
-@require_POST
-def create_checkout_session(request):
-    try:
-        domain_url = 'http://127.0.0.1:8000/'
-        checkout_session = stripe.checkout.Session.create(
-            client_reference_id=request.user.id if request.user.is_authenticated else None,
-            success_url=domain_url + 'dashboard?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=domain_url + 'pricing/',
-            payment_method_types=['card'],
-            mode='subscription',
-            line_items=[
-                {
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {
-                            'name': 'Pro Subscription',
-                            'description': 'Unlimited AI Study Tools',
-                        },
-                        'unit_amount': 1900, # $19.00
-                        'recurring': {
-                            'interval': 'month',
-                        },
-                    },
-                    'quantity': 1,
-                }
-            ]
-        )
-        return JsonResponse({'id': checkout_session.id})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=403)
-
-@csrf_exempt
-@require_POST
-def stripe_webhook(request):
-    payload = request.body
-    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
-    event = None
-
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, getattr(settings, 'STRIPE_WEBHOOK_SECRET', 'whsec_dummy')
-        )
-    except ValueError as e:
-        return HttpResponse(status=400)
-    except stripe.error.SignatureVerificationError as e:
-        return HttpResponse(status=400)
-
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        user_id = session.get("client_reference_id")
-        if user_id:
-            try:
-                user = User.objects.get(id=user_id)
-                user.is_subscribed = True # assuming User model has is_subscribed or we add it
-                user.save()
-            except User.DoesNotExist:
-                pass
-    return HttpResponse(status=200)
-
-from quizzes.models import Question
-
-@login_required
-@require_POST
-def generate_mock_exam(request):
-    try:
-        data = json.loads(request.body)
-        cert_id = data.get('certification_id')
-        question_count = int(data.get('count', 5))
-
-        cert = Certification.objects.get(id=cert_id)
-
-        sys_prompt = f"You are an expert tutor. Create a {question_count}-question multiple choice mock exam for the {cert.title} certification. Return ONLY a JSON array of objects, where each object has keys: 'question_text', 'options' (array of 4 strings), 'correct_answer', and 'explanation'."
-
-        if client and client.api_key and client.api_key not in ["dummy_key_for_tests", "dummy"]:
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "system", "content": sys_prompt}],
-                temperature=0.7
-            )
-            content = response.choices[0].message.content
-            questions_data = json.loads(content)
-        else:
-            # Mock fallback
-            questions_data = []
-            for i in range(question_count):
-                questions_data.append({
-                    "question_text": f"Mock Exam Q{i+1} for {cert.title}?",
-                    "options": ["A", "B", "C", "D"],
-                    "correct_answer": "A",
-                    "explanation": "Because it's a mock."
-                })
-
-        # Create a new Quiz
-        quiz = Quiz.objects.create(
-            title=f"AI Mock Exam: {cert.title}",
-            description="Automatically generated mock exam.",
-            certification=cert,
-            time_limit=1800,
-            passing_score=70
-        )
-
-        for idx, q in enumerate(questions_data):
-            Question.objects.create(
-                quiz=quiz,
-                question_text=q['question_text'],
-                options=q['options'],
-                correct_answer=q['correct_answer'],
-                explanation=q.get('explanation', ''),
-                order=idx+1
-            )
-
-        return JsonResponse({"success": True, "quiz_id": quiz.id})
-    except Exception as e:
-        return JsonResponse({"success": False, "message": str(e)}, status=400)
-
-import csv
-from django.http import HttpResponse
-
-@login_required
-def export_flashcards(request, cert_id):
-    try:
-        cert = Certification.objects.get(id=cert_id)
-        flashcards = Flashcard.objects.filter(certification=cert)
-
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="flashcards_{cert.title}.csv"'
-
-        writer = csv.writer(response)
-        writer.writerow(['Front', 'Back', 'Topic'])
-
-        for fc in flashcards:
-            writer.writerow([fc.front_text, fc.back_text, fc.topic])
-
-        return response
-    except Exception as e:
-        return HttpResponse(str(e), status=400)

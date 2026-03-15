@@ -137,6 +137,10 @@
             <a href="{% url 'discussions' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-comments mr-3 text-green-300"></i> Community
             </a>
+
+            <a href="{% url 'record_lecture' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-microphone mr-3 text-green-300"></i> Record Lecture
+            </a>
           </nav>
         </div>
 
@@ -146,9 +150,9 @@
             <h4 class="font-medium text-white">Pro Upgrade</h4>
           </div>
           <p class="text-xs text-gray-300 mb-3">Get unlimited access to all certification materials</p>
-          <button class="w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
+          <a href="{% url 'pricing' %}" class="block text-center w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
             Upgrade Now
-          </button>
+          </a>
         </div>
       </div>
     </aside>
@@ -208,39 +212,6 @@
             <!-- Main Content Area -->
             <main class="p-6 lg:p-10 bg-gray-50 text-gray-800 font-sans flex-1">
                 <div class="max-w-7xl mx-auto">
-                    <!-- Header Section -->
-                    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div>
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2">My Quizzes</h1>
-                        <p class="text-gray-500">Test your knowledge and track your certification progress.</p>
-                      </div>
-                      <button id="btnGenerateMockExam" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow transition">
-                        <i class="fas fa-magic mr-2"></i> Generate AI Mock Exam
-                      </button>
-                    </div>
-
-                    <!-- AI Mock Exam Modal -->
-                    <div id="mockExamModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                        <h2 class="text-xl font-bold mb-4">Generate Mock Exam</h2>
-                        <div class="mb-4">
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Select Certification</label>
-                          <select id="mockCertId" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            {% for cert in certifications %}
-                              <option value="{{ cert.id }}">{{ cert.title }}</option>
-                            {% endfor %}
-                          </select>
-                        </div>
-                        <div class="mb-6">
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Number of Questions</label>
-                          <input type="number" id="mockCount" value="10" min="1" max="50" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        </div>
-                        <div class="flex justify-end space-x-3">
-                          <button onclick="document.getElementById('mockExamModal').classList.add('hidden')" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">Cancel</button>
-                          <button id="btnConfirmMock" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Generate</button>
-                        </div>
-                      </div>
-                    </div>
                     <!-- Quiz List -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {% for quiz in quizzes %}
@@ -366,59 +337,3 @@
     </script>
 </body>
 </html>
-<script>
-  document.getElementById('btnGenerateMockExam').addEventListener('click', () => {
-    document.getElementById('mockExamModal').classList.remove('hidden');
-  });
-
-  document.getElementById('btnConfirmMock').addEventListener('click', async function() {
-    const certId = document.getElementById('mockCertId').value;
-    const count = document.getElementById('mockCount').value;
-
-    if(!certId) return alert("Select a certification");
-
-    this.innerText = "Generating...";
-    this.disabled = true;
-
-    try {
-      const res = await fetch('/api/generate-mock-exam/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-          certification_id: certId,
-          count: count
-        })
-      });
-      const data = await res.json();
-      if(data.success) {
-        window.location.href = `/quizzes/${data.quiz_id}/start/`;
-      } else {
-        alert(data.message);
-      }
-    } catch(e) {
-      alert("Error generating exam.");
-    } finally {
-      this.innerText = "Generate";
-      this.disabled = false;
-      document.getElementById('mockExamModal').classList.add('hidden');
-    }
-  });
-
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
-  }
-</script>
