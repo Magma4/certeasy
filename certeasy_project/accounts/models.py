@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from certifications.models import Certification
@@ -25,3 +26,19 @@ class UserLogin(models.Model):
 
     class Meta:
         unique_together = ('user', 'login_date')
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='gamified_profile')
+    study_streak = models.IntegerField(default=0)
+    last_study_date = models.DateField(null=True, blank=True)
+
+    def update_streak(self):
+        today = timezone.now().date()
+        if self.last_study_date == today:
+            return # already studied today
+        elif self.last_study_date == today - timezone.timedelta(days=1):
+            self.study_streak += 1
+        else:
+            self.study_streak = 1
+        self.last_study_date = today
+        self.save()

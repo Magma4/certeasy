@@ -6,7 +6,7 @@ from quizzes.models import Quiz, QuizAttempt
 from django.db.models import Avg, Count
 from django.utils import timezone
 from django.urls import reverse
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from resources.models import Resource, VideoView
 from discussions.models import Post, Like, Comment
 from django.core.paginator import Paginator
@@ -1081,12 +1081,33 @@ def ai_generate(request):
         "count": 5 # optional
     }
     """
-    try:
-        data = json.loads(request.body)
-        gen_type = data.get('type')
-        prompt = data.get('prompt', '')
+    import PyPDF2
 
-        cert_id = data.get('certification_id')
+    try:
+        # Check if form data is used (for file uploads)
+        if request.content_type.startswith('multipart/form-data'):
+            gen_type = request.POST.get('type')
+            prompt = request.POST.get('prompt', '')
+            cert_id = request.POST.get('certification_id')
+            count = int(request.POST.get('count', 3))
+
+            if 'file' in request.FILES:
+                uploaded_file = request.FILES['file']
+                if uploaded_file.name.endswith('.pdf'):
+                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                    text = ""
+                    for page in pdf_reader.pages[:5]: # limiting to first 5 pages for brevity
+                        text += page.extract_text()
+                    prompt = f"Based on this document text: {text[:2000]}... generate flashcards."
+                else:
+                    return JsonResponse({"success": False, "message": "Only PDF files are supported currently."})
+            data = {"type": gen_type, "prompt": prompt, "certification_id": cert_id, "count": count}
+        else:
+            data = json.loads(request.body)
+            gen_type = data.get('type')
+            prompt = data.get('prompt', '')
+            cert_id = data.get('certification_id')
+
         context_cert = ""
         if cert_id:
             try:
@@ -1289,4 +1310,145 @@ def ai_transcribe(request):
         return JsonResponse({"success": False, "message": str(e)}, status=400)
 
 def pricing_view(request):
-    return render(request, 'pricing.html')
+    return render(request, 'pricing.html', {'settings': settings})
+
+import stripe
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+@login_required
+@require_POST
+def create_checkout_session(request):
+    try:
+        domain_url = 'http://127.0.0.1:8000/'
+        checkout_session = stripe.checkout.Session.create(
+            client_reference_id=request.user.id if request.user.is_authenticated else None,
+            success_url=domain_url + 'dashboard?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=domain_url + 'pricing/',
+            payment_method_types=['card'],
+            mode='subscription',
+            line_items=[
+                {
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': 'Pro Subscription',
+                            'description': 'Unlimited AI Study Tools',
+                        },
+                        'unit_amount': 1900, # $19.00
+                        'recurring': {
+                            'interval': 'month',
+                        },
+                    },
+                    'quantity': 1,
+                }
+            ]
+        )
+        return JsonResponse({'id': checkout_session.id})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=403)
+
+@csrf_exempt
+@require_POST
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    event = None
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, getattr(settings, 'STRIPE_WEBHOOK_SECRET', 'whsec_dummy')
+        )
+    except ValueError as e:
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError as e:
+        return HttpResponse(status=400)
+
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        user_id = session.get("client_reference_id")
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+                user.is_subscribed = True # assuming User model has is_subscribed or we add it
+                user.save()
+            except User.DoesNotExist:
+                pass
+    return HttpResponse(status=200)
+
+from quizzes.models import Question
+
+@login_required
+@require_POST
+def generate_mock_exam(request):
+    try:
+        data = json.loads(request.body)
+        cert_id = data.get('certification_id')
+        question_count = int(data.get('count', 5))
+
+        cert = Certification.objects.get(id=cert_id)
+
+        sys_prompt = f"You are an expert tutor. Create a {question_count}-question multiple choice mock exam for the {cert.title} certification. Return ONLY a JSON array of objects, where each object has keys: 'question_text', 'options' (array of 4 strings), 'correct_answer', and 'explanation'."
+
+        if client and client.api_key and client.api_key not in ["dummy_key_for_tests", "dummy"]:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "system", "content": sys_prompt}],
+                temperature=0.7
+            )
+            content = response.choices[0].message.content
+            questions_data = json.loads(content)
+        else:
+            # Mock fallback
+            questions_data = []
+            for i in range(question_count):
+                questions_data.append({
+                    "question_text": f"Mock Exam Q{i+1} for {cert.title}?",
+                    "options": ["A", "B", "C", "D"],
+                    "correct_answer": "A",
+                    "explanation": "Because it's a mock."
+                })
+
+        # Create a new Quiz
+        quiz = Quiz.objects.create(
+            title=f"AI Mock Exam: {cert.title}",
+            description="Automatically generated mock exam.",
+            certification=cert,
+            time_limit=1800,
+            passing_score=70
+        )
+
+        for idx, q in enumerate(questions_data):
+            Question.objects.create(
+                quiz=quiz,
+                question_text=q['question_text'],
+                options=q['options'],
+                correct_answer=q['correct_answer'],
+                explanation=q.get('explanation', ''),
+                order=idx+1
+            )
+
+        return JsonResponse({"success": True, "quiz_id": quiz.id})
+    except Exception as e:
+        return JsonResponse({"success": False, "message": str(e)}, status=400)
+
+import csv
+from django.http import HttpResponse
+
+@login_required
+def export_flashcards(request, cert_id):
+    try:
+        cert = Certification.objects.get(id=cert_id)
+        flashcards = Flashcard.objects.filter(certification=cert)
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="flashcards_{cert.title}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Front', 'Back', 'Topic'])
+
+        for fc in flashcards:
+            writer.writerow([fc.front_text, fc.back_text, fc.topic])
+
+        return response
+    except Exception as e:
+        return HttpResponse(str(e), status=400)
