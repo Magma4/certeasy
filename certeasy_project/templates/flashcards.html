@@ -242,6 +242,10 @@
             <a href="{% url 'discussions' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-comments mr-3 text-green-300"></i> Community
             </a>
+
+            <a href="{% url 'record_lecture' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-microphone mr-3 text-green-300"></i> Record Lecture
+            </a>
           </nav>
         </div>
 
@@ -251,9 +255,9 @@
             <h4 class="font-medium text-white">Pro Upgrade</h4>
           </div>
           <p class="text-xs text-gray-300 mb-3">Get unlimited access to all certification materials</p>
-          <button class="w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
+          <a href="{% url 'pricing' %}" class="block text-center w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
             Upgrade Now
-          </button>
+          </a>
         </div>
       </div>
     </aside>
@@ -320,6 +324,30 @@
           viewCardsModal: false,
           viewCardsList: [],
           viewCardsDeckName: '',
+
+          submitSRS(quality) {
+            if (this.currentDeck.length === 0) return;
+            const cardId = this.currentDeck[this.currentCardIndex].id;
+
+            // Post review to backend
+            fetch(`/api/flashcards/${cardId}/review/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken')
+              },
+              body: JSON.stringify({ quality: quality })
+            })
+            .then(res => res.json())
+            .then(data => {
+              console.log("SRS Updated:", data);
+              this.nextCard();
+            })
+            .catch(err => {
+              console.error(err);
+              this.nextCard(); // Proceed anyway for UX
+            });
+          },
           startStudy(deck, name) {
             this.currentDeck = deck;
             this.currentDeckName = name;
@@ -333,25 +361,6 @@
               this.isFlipped = false;
             }
           },
-        async rateCard(difficulty) {
-            const cardId = this.currentDeck[this.currentCardIndex].id;
-            try {
-                await fetch('/api/flashcards/update-progress/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: JSON.stringify({
-                        flashcard_id: cardId,
-                        difficulty: difficulty
-                    })
-                });
-            } catch(e) {
-                console.error(e);
-            }
-            this.nextCard();
-        },
           prevCard() {
             if (this.currentCardIndex > 0) {
               this.currentCardIndex--;
@@ -438,11 +447,8 @@
             <h2 class="text-2xl font-bold mb-6">My Flashcard Decks</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {% for cert in certifications %}
-              <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 flex flex-col justify-between transition-all duration-200 hover:shadow-xl hover:border-green-400 group relative">
-                <a href="/api/export-flashcards/{{ cert.id }}/" class="absolute top-4 right-4 text-gray-400 hover:text-green-600 transition" title="Export to CSV">
-                  <i class="fas fa-file-export"></i>
-                </a>
-                <div class="flex items-center mb-4 mt-2">
+              <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 flex flex-col justify-between transition-all duration-200 hover:shadow-xl hover:border-green-400 group">
+                <div class="flex items-center mb-4">
                   <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-2xl mr-4 group-hover:bg-green-200 transition">
                     <i class="fas fa-brain"></i>
                   </div>
@@ -524,23 +530,25 @@
                 </div>
               </div>
             </div>
-            <div class="flex flex-col items-center mt-6">
-              <div class="flex space-x-3 mb-4" x-show="isFlipped">
-                <button @click="rateCard('hard')" class="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 text-sm font-medium transition-colors">Hard</button>
-                <button @click="rateCard('medium')" class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 text-sm font-medium transition-colors">Good</button>
-                <button @click="rateCard('easy')" class="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 text-sm font-medium transition-colors">Easy</button>
-              </div>
-              <div class="flex w-full justify-between">
-                <button @click="prevCard()" :disabled="currentCardIndex === 0"
-                  class="px-6 py-2 rounded-lg font-semibold text-base transition-all duration-150 shadow-sm border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <i class="fas fa-chevron-left mr-2"></i> Previous
-                </button>
-                <button @click="nextCard()" :disabled="currentCardIndex === currentDeck.length-1"
-                  class="px-6 py-2 rounded-lg font-semibold text-base transition-all duration-150 shadow-sm border border-green-200 bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                  Next <i class="fas fa-chevron-right ml-2"></i>
-                </button>
-              </div>
+
+            <div class="flex justify-between mt-6" x-show="!isFlipped">
+              <button @click="prevCard()" :disabled="currentCardIndex === 0"
+                class="px-6 py-2 rounded-lg font-semibold text-base transition-all duration-150 shadow-sm border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-chevron-left mr-2"></i> Previous
+              </button>
+              <button @click="nextCard()" :disabled="currentCardIndex === currentDeck.length-1"
+                class="px-6 py-2 rounded-lg font-semibold text-base transition-all duration-150 shadow-sm border border-green-200 bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                Next (Skip) <i class="fas fa-chevron-right ml-2"></i>
+              </button>
             </div>
+
+            <div class="flex justify-between mt-6 gap-2" x-show="isFlipped">
+              <button @click="submitSRS(0)" class="flex-1 px-4 py-3 bg-red-100 text-red-700 rounded-lg text-sm font-bold hover:bg-red-200 transition">Again (0)</button>
+              <button @click="submitSRS(3)" class="flex-1 px-4 py-3 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-bold hover:bg-yellow-200 transition">Hard (3)</button>
+              <button @click="submitSRS(4)" class="flex-1 px-4 py-3 bg-green-100 text-green-700 rounded-lg text-sm font-bold hover:bg-green-200 transition">Good (4)</button>
+              <button @click="submitSRS(5)" class="flex-1 px-4 py-3 bg-blue-100 text-blue-700 rounded-lg text-sm font-bold hover:bg-blue-200 transition">Easy (5)</button>
+            </div>
+
           </div>
         </template>
 
@@ -575,3 +583,20 @@
 
 
 </html>
+
+    <script>
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+    </script>

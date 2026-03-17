@@ -39,6 +39,10 @@
             <a href="{% url 'discussions' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-comments mr-3 text-green-300"></i> Community
             </a>
+
+            <a href="{% url 'record_lecture' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-microphone mr-3 text-green-300"></i> Record Lecture
+            </a>
           </nav>
         </div>
 
@@ -48,9 +52,9 @@
             <h4 class="font-medium text-white">Pro Upgrade</h4>
           </div>
           <p class="text-xs text-gray-300 mb-3">Get unlimited access to all certification materials</p>
-          <button class="w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
+          <a href="{% url 'pricing' %}" class="block text-center w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
             Upgrade Now
-          </button>
+          </a>
         </div>
       </div>
     </aside>

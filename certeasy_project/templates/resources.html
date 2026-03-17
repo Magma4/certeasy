@@ -205,6 +205,10 @@
             <a href="{% url 'discussions' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
               <i class="fas fa-comments mr-3 text-green-300"></i> Community
             </a>
+
+            <a href="{% url 'record_lecture' %}" class="sidebar-link flex items-center px-4 py-3 rounded hover:bg-gray-800/50">
+              <i class="fas fa-microphone mr-3 text-green-300"></i> Record Lecture
+            </a>
           </nav>
         </div>
 
@@ -214,9 +218,9 @@
             <h4 class="font-medium text-white">Pro Upgrade</h4>
           </div>
           <p class="text-xs text-gray-300 mb-3">Get unlimited access to all certification materials</p>
-          <button class="w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
+          <a href="{% url 'pricing' %}" class="block text-center w-full py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors">
             Upgrade Now
-          </button>
+          </a>
         </div>
       </div>
     </aside>
@@ -358,24 +362,6 @@
           <button type="submit" class="bg-green-600 text-white px-4 py-1 rounded">Filter</button>
         </form>
 
-        <!-- AI Generate Resource -->
-        <div class="bg-green-50 rounded-lg shadow-sm border border-green-200 p-6 mb-8">
-          <h3 class="text-lg font-semibold text-green-900 mb-3"><i class="fas fa-magic mr-2"></i> Generate Resource with AI</h3>
-          <p class="text-sm text-green-700 mb-4">Need a study guide or summary? Provide a topic and let AI generate a study resource for you.</p>
-          <div class="flex flex-col md:flex-row gap-4">
-            <select id="ai_cert" class="rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm">
-              <option value="">Select Certification</option>
-              {% for cert in certifications %}
-                <option value="{{ cert.id }}">{{ cert.title }}</option>
-              {% endfor %}
-            </select>
-            <input type="text" id="ai_resource_prompt" class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" placeholder="e.g. Detailed study guide on OSI Model Layers">
-            <button type="button" id="btnAIGenResource" class="bg-green-600 text-white px-6 py-2 rounded-md font-medium hover:bg-green-700 transition-colors whitespace-nowrap">
-              Generate
-            </button>
-          </div>
-        </div>
-
         <!-- Resource List -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-8">
           <h3 class="text-lg font-semibold text-gray-900 mb-5">All Resources</h3>
@@ -476,52 +462,6 @@
       }).then(response => {
         if (response.ok) {
           location.reload();
-        }
-      });
-    }
-
-    const btnGen = document.getElementById('btnAIGenResource');
-    if (btnGen) {
-      btnGen.addEventListener('click', async function() {
-        const certId = document.getElementById('ai_cert').value;
-        const prompt = document.getElementById('ai_resource_prompt').value;
-
-        if (!certId || !prompt) {
-          alert('Please select a certification and enter a topic prompt.');
-          return;
-        }
-
-        const btn = this;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Generating...';
-        btn.disabled = true;
-
-        try {
-          const res = await fetch('/api/ai/generate/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({
-              type: 'resource',
-              prompt: prompt,
-              certification_id: certId
-            })
-          });
-          const data = await res.json();
-          if (data.success) {
-            alert('Resource generated successfully!');
-            location.reload();
-          } else {
-            alert(data.message || 'Failed to generate resource.');
-          }
-        } catch (err) {
-          console.error(err);
-          alert('An error occurred during AI generation.');
-        } finally {
-          btn.innerHTML = originalText;
-          btn.disabled = false;
         }
       });
     }

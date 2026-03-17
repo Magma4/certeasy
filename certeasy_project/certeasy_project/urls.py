@@ -19,6 +19,9 @@ from django.urls import path, include
 from .views import *
 from django.conf.urls.static import static
 from django.conf import settings
+from .test_ai import generate_ai_content, transcribe_audio, extract_pdf_text
+from .test_saas import pricing_page, record_lecture_page, create_checkout_session
+from .test_mock_exam import generate_mock_exam
 
 urlpatterns = [
     path('', landing_page, name='landing_page'),
@@ -29,7 +32,7 @@ urlpatterns = [
     path('mycertifications', mycertifications, name='mycertifications'),
     path('resources', resources, name='resources'),
     path('flashcards', flashcards, name='flashcards'),
-    path('flashcards/create/', create_flashcard, name='create_flashcard'),
+    # path('flashcards/create/', create_flashcard, name='create_flashcard'),
     path('quizzes', quizzes, name='quizzes'),
     path('forgot-password/', forgot_password_page, name='forgot_password'),
     path('reset-password/<str:uidb64>/<str:token>/', reset_confirm_page, name='reset_confirm'),
@@ -64,14 +67,13 @@ urlpatterns = [
     path('create-study-plan/', create_study_plan, name='create_study_plan'),
     path('certification/<int:cert_id>/', certification_view, name='certification_view'),
     path('notification-dropdown/', notification_dropdown_view, name='notification_dropdown'),
-    path('api/ai/generate/', ai_generate, name='ai_generate'),
-    path('record-lecture/', record_lecture_view, name='record_lecture'),
-    path('api/ai/transcribe/', ai_transcribe, name='ai_transcribe'),
-    path('pricing/', pricing_view, name='pricing'),
+    path('api/ai/generate/', generate_ai_content, name='generate_ai_content'),
+    path('api/ai/transcribe/', transcribe_audio, name='transcribe_audio'),
+    path('api/ai/extract_pdf/', extract_pdf_text, name='extract_pdf_text'),
+    path('pricing/', pricing_page, name='pricing'),
+    path('record-lecture/', record_lecture_page, name='record_lecture'),
     path('api/create-checkout-session/', create_checkout_session, name='create_checkout_session'),
-    path('api/stripe-webhook/', stripe_webhook, name='stripe_webhook'),
-    path('api/generate-mock-exam/', generate_mock_exam, name='generate_mock_exam'),
-    path('api/export-flashcards/<int:cert_id>/', export_flashcards, name='export_flashcards'),
+    path('generate-mock-exam/', generate_mock_exam, name='generate_mock_exam'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
